@@ -23,45 +23,41 @@
         .slide.active { display: flex; opacity: 1; animation: fadeIn 0.5s forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* スライド内のレイアウト (PCでは左右、スマホでは上下) */
+        /* スライド内のレイアウト */
         .panel-layout { display: flex; flex-direction: column; gap: 20px; }
         @media (min-width: 768px) { .panel-layout { flex-direction: row; } .panel-left, .panel-right { flex: 1; } }
 
-        /* 数式表示エリア（主役） */
+        /* 数式表示エリア */
         .math-box { 
             background: #f1f3f5; border: 1px solid #ced4da; border-radius: 10px; padding: 20px; 
-            min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center;
             font-family: 'Times New Roman', Times, serif; font-size: 1.4em; letter-spacing: 1px;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); position: relative;
         }
-        .math-line { transition: all 0.5s ease; margin: 5px 0; text-align: center; width: 100%; }
+        .math-line { transition: all 0.5s ease; margin: 8px 0; text-align: center; width: 100%; }
         .highlight { color: #e03131; font-weight: bold; text-shadow: 0 0 8px rgba(224,49,49,0.3); transition: color 0.5s; }
-        .math-controls { margin-top: 15px; display: flex; justify-content: center; gap: 10px; }
-        .btn-math { background: #1971c2; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        .math-controls { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+        .btn-math { background: #1971c2; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 1em; }
         .btn-math:hover { background: #1864ab; transform: translateY(-2px); }
         .btn-math:disabled { background: #adb5bd; cursor: not-allowed; transform: none; box-shadow: none; }
 
         /* インタラクションエリア */
-        .interaction-box { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
-        .section-title { font-size: 0.9em; font-weight: bold; color: #495057; margin-bottom: 10px; border-left: 3px solid #1971c2; padding-left: 8px; }
+        .interaction-box { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
+        .section-title { font-size: 1em; font-weight: bold; color: #495057; margin-bottom: 15px; border-left: 4px solid #1971c2; padding-left: 10px; }
         
         /* スライダー */
-        input[type="range"] { -webkit-appearance: none; width: 100%; margin: 10px 0; background: transparent; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; margin: 15px 0; background: transparent; }
         input[type="range"]:focus { outline: none; }
-        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #dee2e6; border-radius: 3px; }
-        input[type="range"]::-webkit-slider-thumb { height: 20px; width: 20px; border-radius: 50%; background: #3498db; cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #dee2e6; border-radius: 4px; }
+        input[type="range"]::-webkit-slider-thumb { height: 24px; width: 24px; border-radius: 50%; background: #e03131; cursor: pointer; -webkit-appearance: none; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         
-        /* ゲージ (Slide 1) */
-        .gauge-container { width: 100%; height: 30px; background: #eee; border-radius: 15px; overflow: hidden; display: flex; margin-top: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
-        .gauge-ha { background: #ff8787; transition: flex-basis 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8em; }
-        .gauge-a { background: #74c0fc; transition: flex-basis 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8em; }
-
-        /* グラフ (Slide 2) */
-        .chart-wrapper { position: relative; width: 100%; height: 200px; margin-top: 10px; }
+        /* グラフ */
+        .chart-wrapper { position: relative; width: 100%; height: 220px; margin-top: 15px; }
 
         /* ナビゲーションボタン */
-        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        .btn-nav { padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 1em; transition: 0.2s; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; }
+        .btn-nav { padding: 12px 24px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 1em; transition: 0.2s; }
         .btn-prev { background: #f1f3f5; color: #495057; }
         .btn-next { background: #2f9e44; color: white; box-shadow: 0 2px 5px rgba(47,158,68,0.3); }
         .btn-nav:hover { opacity: 0.9; }
@@ -85,13 +81,13 @@
 
     <div class="slide-container">
         <div class="slide active" id="slide-1">
-            <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: #34495e;">
+            <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: #34495e; margin-bottom: 10px;">
                 Step 1: 質量作用の法則と酸解離定数 (<span style="font-family: serif; font-style: italic;">K<sub>a</sub></span>)
             </div>
             
-            <div class="panel-layout">
-                <div class="panel-left">
-                    <div class="math-box">
+            <div style="display: flex; justify-content: center;">
+                <div style="width: 100%; max-width: 600px;">
+                    <div class="math-box" style="font-size: 1.6em; padding: 40px 20px;">
                         <div id="math-display-1" style="width: 100%;">
                             </div>
                     </div>
@@ -100,32 +96,11 @@
                         <button class="btn-math" id="btn-math-next-1" onclick="stepMath1(1)">変形を進める ▶</button>
                     </div>
                 </div>
-
-                <div class="panel-right interaction-box">
-                    <div class="section-title">平衡状態のシミュレーション</div>
-                    <div style="text-align: center; font-family: serif; font-size: 1.2em; margin-bottom: 10px;">
-                        HA ⇌ H<sup>+</sup> + A<sup>-</sup>
-                    </div>
-                    
-                    <label style="font-size: 0.85em;">[HA] 濃度 (反応物): <span id="val-ha">50</span></label>
-                    <input type="range" id="slider-ha" min="10" max="90" value="50">
-                    
-                    <label style="font-size: 0.85em; margin-top:10px; display:block;">[A<sup>-</sup>] 濃度 (生成物): <span id="val-a">50</span></label>
-                    <input type="range" id="slider-a" min="10" max="90" value="50">
-
-                    <div style="margin-top: 15px;">
-                        <span style="font-size: 0.85em; font-weight: bold;">電離割合ゲージ:</span>
-                        <div class="gauge-container">
-                            <div class="gauge-ha" id="gauge-ha" style="flex-basis: 50%;">HA (未電離)</div>
-                            <div class="gauge-a" id="gauge-a" style="flex-basis: 50%;">A⁻ (電離済)</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
         <div class="slide" id="slide-2">
-            <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: #34495e;">
+            <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: #34495e; margin-bottom: 10px;">
                 Step 2: 対数変換とHenderson-Hasselbalch式
             </div>
             
@@ -142,14 +117,18 @@
                 </div>
 
                 <div class="panel-right interaction-box">
-                    <div class="section-title">pHは「比の対数」で決まる</div>
+                    <div class="section-title">pHが分子の「比」を決定する</div>
                     
-                    <label style="font-size: 0.85em; font-weight: bold;">[A<sup>-</sup>] / [HA] の比率: <span id="val-ratio" style="color:#1971c2;">1.00</span></label>
-                    <input type="range" id="slider-ratio" min="-2" max="2" step="0.1" value="0">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: #888;">
-                        <span>1:100<br>(酸性側)</span>
-                        <span>1:1<br>(等電点/pKa)</span>
-                        <span>100:1<br>(塩基性側)</span>
+                    <label style="font-size: 1em; font-weight: bold; color: #333;">
+                        バッファー pH: <span id="val-ph" style="color:#e03131; font-size: 1.3em;">5.0</span>
+                    </label>
+                    <input type="range" id="slider-ph" min="2" max="8" step="0.1" value="5.0">
+                    
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #e9ecef; font-size: 0.9em;">
+                        <span style="color: #666;">※ この分子の pK<sub>a</sub> = 5.0 と仮定</span><br>
+                        <div style="margin-top: 5px; font-weight: bold;">
+                            [A<sup>-</sup>] : [HA] の比率 = <span id="val-ratio" style="color:#1971c2; font-size: 1.2em;">1.00 : 1</span>
+                        </div>
                     </div>
 
                     <div class="chart-wrapper">
@@ -160,28 +139,28 @@
         </div>
 
         <div class="slide" id="slide-3">
-            <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: #34495e;">
+            <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: #34495e; margin-bottom: 10px;">
                 Step 3: 完成した式と電離状態のリンク
             </div>
             
             <div class="panel-layout">
                 <div class="panel-left interaction-box" style="display: flex; flex-direction: column; justify-content: center; align-items: center; background: #e8f4f8;">
-                    <div style="font-family: serif; font-size: 1.8em; margin-bottom: 20px;">
-                        pH = pK<sub>a</sub> + log<span style="font-size:1.2em;">(</span><frac style="display:inline-block; text-align:center; vertical-align:middle; font-size:0.7em;"><div style="border-bottom:1px solid #333; padding:0 5px;">[A<sup>-</sup>]</div><div style="padding:0 5px;">[HA]</div></frac><span style="font-size:1.2em;">)</span>
+                    <div style="font-family: serif; font-size: 2em; margin-bottom: 25px; color: #1971c2;">
+                        pH = pK<sub>a</sub> + log<span style="font-size:1.2em;">(</span><frac style="display:inline-block; text-align:center; vertical-align:middle; font-size:0.7em; color: #333;"><div style="border-bottom:2px solid #333; padding:0 5px;">[A<sup>-</sup>]</div><div style="padding:0 5px;">[HA]</div></frac><span style="font-size:1.2em;">)</span>
                     </div>
-                    <p style="font-size: 0.9em; color: #555; text-align: center;">
-                        この式は「pHとpKaの差」が「分子の形（比率）」を決定づけることを示しています。<br>
-                        前回のシミュレーターで学んだ「pHがpKaを超えると形が変わる」現象は、この数式によって完全に証明されました。
+                    <p style="font-size: 1em; color: #333; text-align: center; line-height: 1.6; padding: 0 10px; font-weight: bold;">
+                        この式は、あるpHにおける分子の形の“割合”を<br>直接決定します。<br><br>
+                        形は切り替わるのではなく、<br>pHとpKaの差に応じて連続的に変化します。
                     </p>
                 </div>
                 
                 <div class="panel-right interaction-box">
                     <div class="section-title">式の総括</div>
-                    <ul style="font-size: 0.9em; line-height: 1.6; color: #444;">
+                    <ul style="font-size: 0.95em; line-height: 1.8; color: #444;">
                         <li><b style="color:#e03131;">質量作用の法則</b>からスタートし、分子の衝突確率から「平衡定数(Ka)」を導き出しました。</li>
                         <li>そのままでは非常に小さな数値（10<sup>-5</sup>など）で扱いづらいため、<b style="color:#1971c2;">対数(log)</b>を取りました。</li>
                         <li>結果として現れたのが <b>Henderson-Hasselbalch式</b> です。</li>
-                        <li>これにより、溶液のpHを測るだけで、目に見えないミクロな分子の構造（[A-]/[HA]の比率）を計算で予測できるようになりました。</li>
+                        <li>これにより、溶液のpHを測るだけで、目に見えないミクロな分子の構造（[A-]/[HA]の比率）を計算で正確に予測できるようになりました。</li>
                     </ul>
                 </div>
             </div>
@@ -225,7 +204,7 @@ const mathSteps1Data = [
     `<div class="math-line">v<sub>forward</sub> = k<sub>f</sub>[HA]</div>
      <div class="math-line">v<sub>backward</sub> = k<sub>b</sub>[H<sup>+</sup>][A<sup>-</sup>]</div>`,
     
-    `<div class="math-line" style="font-size:0.7em; color:#666;">平衡状態では速度が等しい</div>
+    `<div class="math-line" style="font-size:0.7em; color:#666; margin-bottom:10px;">平衡状態では速度が等しい</div>
      <div class="math-line"><span class="highlight">v<sub>forward</sub></span> = <span class="highlight">v<sub>backward</sub></span></div>`,
      
     `<div class="math-line"><span class="highlight">k<sub>f</sub>[HA]</span> = <span class="highlight">k<sub>b</sub>[H<sup>+</sup>][A<sup>-</sup>]</span></div>`,
@@ -253,37 +232,6 @@ function renderMath1() {
 function stepMath1(dir) {
     mathStep1 += dir;
     renderMath1();
-}
-
-// Slide 1: インタラクション
-document.getElementById('slider-ha').addEventListener('input', updateGauge);
-document.getElementById('slider-a').addEventListener('input', updateGauge);
-
-function updateGauge() {
-    const ha = parseInt(document.getElementById('slider-ha').value);
-    const a = parseInt(document.getElementById('slider-a').value);
-    
-    document.getElementById('val-ha').innerText = ha;
-    document.getElementById('val-a').innerText = a;
-    
-    const total = ha + a;
-    const pctHa = (ha / total) * 100;
-    const pctA = (a / total) * 100;
-    
-    document.getElementById('gauge-ha').style.flexBasis = `${pctHa}%`;
-    document.getElementById('gauge-a').style.flexBasis = `${pctA}%`;
-    
-    // 視覚的なフィードバック
-    if(pctA > 70) {
-        document.getElementById('gauge-a').innerText = "A⁻ (多く電離)";
-        document.getElementById('gauge-ha').innerText = "HA";
-    } else if(pctHa > 70) {
-        document.getElementById('gauge-ha').innerText = "HA (未電離が多い)";
-        document.getElementById('gauge-a').innerText = "A⁻";
-    } else {
-        document.getElementById('gauge-ha').innerText = "HA (未電離)";
-        document.getElementById('gauge-a').innerText = "A⁻ (電離済)";
-    }
 }
 
 // ================= Slide 2: 数式アニメーション =================
@@ -325,32 +273,36 @@ function stepMath2(dir) {
     renderMath2();
 }
 
-// Slide 2: グラフとインタラクション
+// ================= Slide 2: グラフとインタラクション =================
 let hhChart;
+const PKA_VAL = 5.0;
+
 function initChart() {
     const ctx = document.getElementById('hhChart').getContext('2d');
     
-    // データ生成 (pKa = 5.0 を仮定)
-    const pKa = 5.0;
+    // シグモイド曲線を描画するためのデータポイント
     const dataPoints = [];
-    for(let logRatio = -2.5; logRatio <= 2.5; logRatio += 0.5) {
-        dataPoints.push({x: logRatio, y: pKa + logRatio});
+    for(let ph = 2.0; ph <= 8.0; ph += 0.1) {
+        let ratio = Math.pow(10, ph - PKA_VAL);
+        let pctA = (ratio / (1 + ratio)) * 100;
+        dataPoints.push({x: ph, y: pctA});
     }
 
     hhChart = new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [{
-                label: 'pH',
+                label: 'A⁻ (電離状態) の割合',
                 data: dataPoints,
-                borderColor: '#adb5bd',
-                borderWidth: 2,
+                borderColor: '#1971c2',
+                backgroundColor: 'rgba(25, 113, 194, 0.1)',
+                borderWidth: 3,
                 pointRadius: 0,
-                fill: false,
-                tension: 0
+                fill: true,
+                tension: 0.4
             }, {
-                label: '現在の状態',
-                data: [{x: 0, y: 5.0}],
+                label: '現在のpH',
+                data: [{x: 5.0, y: 50.0}],
                 backgroundColor: '#e03131',
                 borderColor: 'white',
                 borderWidth: 2,
@@ -363,39 +315,41 @@ function initChart() {
             maintainAspectRatio: false,
             scales: {
                 x: { 
-                    type: 'linear', position: 'bottom', min: -2.5, max: 2.5,
-                    title: { display: true, text: 'log([A⁻]/[HA])' },
-                    grid: { color: (ctx) => ctx.tick.value === 0 ? '#333' : '#eee' }
+                    type: 'linear', position: 'bottom', min: 2, max: 8,
+                    title: { display: true, text: 'バッファー pH', font: { weight: 'bold' } },
+                    grid: { color: (ctx) => ctx.tick.value === 5.0 ? '#888' : '#eee' }
                 },
                 y: { 
-                    min: 2, max: 8,
-                    title: { display: true, text: 'pH' },
-                    grid: { color: (ctx) => ctx.tick.value === 5.0 ? '#333' : '#eee' }
+                    min: 0, max: 100,
+                    title: { display: true, text: 'A⁻ の割合 (%)', font: { weight: 'bold' } }
                 }
             },
-            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+            plugins: { 
+                legend: { display: false }, 
+                tooltip: { enabled: false }
+            }
         }
     });
 }
 
-document.getElementById('slider-ratio').addEventListener('input', (e) => {
-    const logRatio = parseFloat(e.target.value);
-    const pKa = 5.0;
-    const currentpH = pKa + logRatio;
-    
-    // 実数値の比率を計算 (10^logRatio)
-    let actualRatio = Math.pow(10, logRatio);
+document.getElementById('slider-ph').addEventListener('input', (e) => {
+    const ph = parseFloat(e.target.value);
+    document.getElementById('val-ph').innerText = ph.toFixed(1);
+
+    // 比率と割合の計算
+    let ratio = Math.pow(10, ph - PKA_VAL);
+    let pctA = (ratio / (1 + ratio)) * 100;
+
     let ratioText = "";
-    if(actualRatio >= 1) {
-        ratioText = `${actualRatio.toFixed(1)} : 1`;
+    if(ratio >= 1) {
+        ratioText = `${ratio.toFixed(2)} : 1`;
     } else {
-        ratioText = `1 : ${(1/actualRatio).toFixed(1)}`;
+        ratioText = `1 : ${(1/ratio).toFixed(2)}`;
     }
-    
     document.getElementById('val-ratio').innerText = ratioText;
     
-    // グラフ上の赤いドットを動かす
-    hhChart.data.datasets[1].data = [{x: logRatio, y: currentpH}];
+    // グラフの赤いドットを動かす
+    hhChart.data.datasets[1].data = [{x: ph, y: pctA}];
     hhChart.update();
 });
 
@@ -403,7 +357,6 @@ document.getElementById('slider-ratio').addEventListener('input', (e) => {
 window.onload = () => {
     renderMath1();
     renderMath2();
-    updateGauge();
     initChart();
 };
 </script>
