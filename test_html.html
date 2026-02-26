@@ -2,64 +2,104 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>AEX Simulator JS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AEX Simulator (Mobile Friendly)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; color: #333; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; padding: 10px; margin: 0; color: #333; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
         .header { background: linear-gradient(135deg, #e0e0e0, #ffffff); padding: 15px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 20px; }
-        .main-layout { display: flex; gap: 20px; }
-        .controls { flex: 1; }
-        .visualization { flex: 1.5; border: 1px solid #ddd; border-radius: 8px; padding: 15px; position: relative; min-height: 400px; background: #fff; }
+        .header h2 { margin: 0; font-size: 1.3em; }
+        .header p { font-size: 0.85em; margin: 5px 0 0 0; color: #555; }
+        
+        .main-layout { display: flex; flex-direction: column; gap: 20px; }
+        .controls { flex: 1; background: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #eee; }
+        .visualization { flex: 1; border: 1px solid #ddd; border-radius: 10px; padding: 15px; background: #fff; min-height: 400px; position: relative; }
+        
+        /* PC画面以上の場合は横並びに */
+        @media (min-width: 768px) {
+            .main-layout { flex-direction: row; }
+            .controls { flex: 1.2; }
+            .visualization { flex: 1.8; }
+        }
+
+        .section-title { font-weight: bold; margin-bottom: 12px; display: block; border-left: 4px solid #3498db; padding-left: 8px; font-size: 1.1em; }
+        
+        /* スマホ操作向けスライダー */
+        input[type="range"] { -webkit-appearance: none; width: 100%; margin: 15px 0; background: transparent; }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #ced4da; border-radius: 4px; }
+        input[type="range"]::-webkit-slider-thumb {
+            height: 30px; width: 30px; border-radius: 50%; background: #3498db;
+            cursor: pointer; -webkit-appearance: none; margin-top: -11px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        /* スマホ操作向けセレクトボックス＆入力欄 */
+        select, input[type="number"] { 
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; 
+            font-size: 16px; /* ズーム防止 */
+            background-color: white; box-sizing: border-box;
+        }
+
+        .protein-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #ddd; }
+        .protein-row input[type="number"] { width: 70px; padding: 8px; text-align: center; }
         
         /* カラムの見た目 */
-        .column { width: 120px; height: 250px; border: 3px solid #666; margin: 40px auto; border-radius: 10px; position: relative; background: #f9f9f9; overflow: hidden; }
-        .bead { position: absolute; width: 10px; height: 10px; background: #aabbdd; border-radius: 50%; font-size: 8px; text-align: center; line-height: 10px; color: black; font-weight: bold; }
-        .protein-particle { position: absolute; padding: 4px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; transition: all 0.5s ease; color: white; text-align: center; }
+        .column { width: 100px; max-width: 40%; height: 220px; border: 3px solid #666; margin: 30px auto; border-radius: 8px; position: relative; background: #f9f9f9; overflow: hidden; }
+        .bead { position: absolute; width: 12px; height: 12px; background: #aabbdd; border-radius: 50%; font-size: 10px; text-align: center; line-height: 12px; color: black; font-weight: bold; }
         
-        .flowthrough-area { height: 60px; border: 2px dashed #4CAF50; border-radius: 8px; margin-top: 20px; position: relative; background: #e8f5e9; }
-        .section-title { font-weight: bold; margin-bottom: 10px; display: block; border-left: 4px solid #3498db; padding-left: 8px; }
+        .protein-particle { 
+            position: absolute; padding: 4px 6px; border-radius: 12px; font-size: 0.75em; 
+            font-weight: bold; transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            color: white; text-align: center; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
         
-        input[type="range"] { width: 100%; }
-        .protein-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 5px; border-bottom: 1px solid #eee; }
-        .status-tag { font-size: 10px; padding: 2px 5px; border-radius: 4px; }
+        .flowthrough-area { height: 80px; border: 2px dashed #4CAF50; border-radius: 8px; margin-top: 15px; position: relative; background: #e8f5e9; overflow: hidden; }
+        
+        .chart-container { position: relative; width: 100%; height: 200px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0">陰イオン交換クロマトグラフィー シミュレーター</h2>
-        <p style="font-size: 12px; margin: 5px 0 0 0;">JavaScript Version | pHと塩濃度による挙動の可視化</p>
+        <h2>陰イオン交換(AEX) シミュレーター</h2>
+        <p>バッファーpHと塩濃度によるタンパク質の結合・溶出挙動</p>
     </div>
 
     <div class="main-layout">
         <div class="controls">
-            <div class="section-title">バッファー条件</div>
-            <label>pH: <span id="ph-val">8.0</span></label>
+            <div class="section-title">1. バッファー条件</div>
+            <label style="font-weight:bold;">pH: <span id="ph-val" style="color:#3498db; font-size:1.2em; margin-left:10px;">8.0</span></label>
             <input type="range" id="ph-slider" min="3" max="11" step="0.1" value="8.0">
             
-            <label style="margin-top:10px; display:block;">塩濃度:</label>
-            <select id="salt-select" style="width:100%; padding:5px;">
-                <option value="0">0 mM (閾値: 0.0)</option>
-                <option value="0.2">低 (50 mM, 閾値: 0.2)</option>
-                <option value="1.5">中 (150 mM, 閾値: 1.5)</option>
-                <option value="3.0">高 (500 mM, 閾値: 3.0)</option>
+            <label style="margin-top:10px; display:block; font-weight:bold;">塩濃度 (溶出力):</label>
+            <select id="salt-select">
+                <option value="0">0 mM (すべて結合)</option>
+                <option value="0.2">低：50 mM (弱い結合を溶出)</option>
+                <option value="1.5">中：150 mM (中程度の結合を溶出)</option>
+                <option value="3.0">高：500 mM (ほぼすべて溶出)</option>
             </select>
 
-            <div class="section-title" style="margin-top:20px;">タンパク質設定</div>
+            <div class="section-title" style="margin-top:25px;">2. タンパク質設定 (pI)</div>
             <div id="protein-list"></div>
             
-            <canvas id="strengthChart" width="300" height="200"></canvas>
+            <div class="chart-container">
+                <canvas id="strengthChart"></canvas>
+            </div>
         </div>
 
         <div class="visualization">
-            <div style="text-align:center; font-size:12px;">サンプル投入</div>
-            <div style="text-align:center;">↓</div>
+            <div class="section-title" style="margin-bottom: 5px;">カラムの様子</div>
+            <div style="text-align:center; font-size:0.85em; color:#666;">サンプル投入</div>
+            <div style="text-align:center; font-size:1.2em; color:#666;">↓</div>
+            
             <div class="column" id="column-resin"></div>
-            <div style="text-align:center;">↓</div>
+            
+            <div style="text-align:center; font-size:1.2em; color:#666;">↓</div>
             <div class="flowthrough-area" id="ft-area">
-                <div style="font-size:10px; text-align:center; color:#4CAF50;">フロースルー / 溶出画分</div>
+                <div style="font-size:0.85em; text-align:center; color:#2e7d32; padding-top:5px; font-weight:bold;">フロースルー / 溶出画分</div>
             </div>
         </div>
     </div>
@@ -76,13 +116,13 @@ const PROTEINS = [
 let chart;
 
 function init() {
-    // 樹脂ビーズの配置
+    // 樹脂ビーズ（＋電荷）の配置
     const resin = document.getElementById('column-resin');
-    for(let i=0; i<40; i++) {
+    for(let i=0; i<35; i++) {
         const bead = document.createElement('div');
         bead.className = 'bead';
-        bead.style.left = Math.random() * 100 + 'px';
-        bead.style.top = Math.random() * 230 + 'px';
+        bead.style.left = Math.random() * 85 + '%';
+        bead.style.top = Math.random() * 90 + '%';
         bead.innerText = '+';
         resin.appendChild(bead);
     }
@@ -93,16 +133,21 @@ function init() {
         const div = document.createElement('div');
         div.className = 'protein-row';
         div.innerHTML = `
-            <div style="width:12px; height:12px; border-radius:50%; background:${p.color}"></div>
-            <span style="width:60px; font-size:12px;">${p.name}</span>
-            <input type="number" step="0.1" value="${p.pI}" style="width:40px" id="pi-${i}">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:14px; height:14px; border-radius:50%; background:${p.color}; box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>
+                <span style="font-size:0.95em; font-weight:bold;">${p.name}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:5px;">
+                <span style="font-size:0.85em; color:#666;">pI:</span>
+                <input type="number" step="0.1" value="${p.pI}" id="pi-${i}">
+            </div>
         `;
         list.appendChild(div);
         document.getElementById(`pi-${i}`).addEventListener('input', update);
     });
 
     document.getElementById('ph-slider').addEventListener('input', (e) => {
-        document.getElementById('ph-val').innerText = e.target.value;
+        document.getElementById('ph-val').innerText = parseFloat(e.target.value).toFixed(1);
         update();
     });
     document.getElementById('salt-select').addEventListener('change', update);
@@ -117,11 +162,34 @@ function initChart() {
         type: 'bar',
         data: {
             labels: PROTEINS.map(p => p.name),
-            datasets: [{ label: 'pH - pI', data: [], backgroundColor: PROTEINS.map(p => p.color) }]
+            datasets: [{ 
+                label: '結合強度 (pH - pI)', 
+                data: [], 
+                backgroundColor: PROTEINS.map(p => p.color),
+                borderRadius: 4
+            }]
         },
         options: {
-            scales: { y: { min: -5, max: 5 } },
-            plugins: { legend: { display: false } }
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { 
+                y: { 
+                    min: -5, max: 5,
+                    title: { display: true, text: '結合強度 (pH - pI)', font: { size: 10 } }
+                } 
+            },
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let val = context.raw;
+                            if (val <= 0) return '素通り (FT): ' + val.toFixed(1);
+                            return '結合傾向 (+): ' + val.toFixed(1);
+                        }
+                    }
+                }
+            }
         }
     });
 }
@@ -133,36 +201,39 @@ function update() {
     const resin = document.getElementById('column-resin');
     const ftArea = document.getElementById('ft-area');
     
-    // 既存の粒子を削除（名前ラベル以外）
+    // 既存の粒子を削除
     document.querySelectorAll('.protein-particle').forEach(e => e.remove());
 
     const chartData = [];
 
     PROTEINS.forEach((p, i) => {
-        const pI = parseFloat(document.getElementById(`pi-${i}`).value);
-        const charge = pI - ph; // 正=正電荷, 負=負電荷
-        const diff = ph - pI;   // 正=結合傾向
+        const pIInput = document.getElementById(`pi-${i}`);
+        const pI = pIInput ? parseFloat(pIInput.value) : p.pI;
+        
+        const diff = ph - pI;   // 正=結合傾向(負電荷), 負=素通り(正電荷)
         chartData.push(diff);
 
         const particle = document.createElement('div');
         particle.className = 'protein-particle';
         particle.style.backgroundColor = p.color;
-        particle.innerText = p.name;
+        particle.innerText = p.name.substring(0, 4); // スマホ向けに文字数を省略
 
         if (diff <= 0) {
-            // 素通り (Flowthrough)
-            particle.style.left = (10 + i * 25) + "%";
-            particle.style.bottom = "10px";
+            // 素通り (Flowthrough) - 緑のエリアへ
+            particle.style.left = (10 + i * 22) + "%";
+            particle.style.bottom = "15px";
+            particle.style.transform = "scale(0.9)";
             ftArea.appendChild(particle);
         } else if (diff <= saltThreshold) {
-            // 塩で溶出 (Eluted)
-            particle.style.left = (10 + i * 25) + "%";
-            particle.style.top = "10px";
+            // 塩で溶出 (Eluted) - 緑のエリアの上部へ
+            particle.style.left = (10 + i * 22) + "%";
+            particle.style.top = "25px";
+            particle.style.transform = "scale(0.9)";
             ftArea.appendChild(particle);
         } else {
-            // 結合中 (Bound)
-            particle.style.left = (10 + (i%2) * 40) + "px";
-            particle.style.top = (20 + i * 50) + "px";
+            // 結合中 (Bound) - カラム内に留まる
+            particle.style.left = "15%"; // 中央付近に配置
+            particle.style.top = (15 + i * 20) + "%";
             resin.appendChild(particle);
         }
     });
