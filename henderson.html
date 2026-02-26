@@ -46,12 +46,16 @@
         .interaction-box { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
         .section-title { font-size: 1em; font-weight: bold; color: #495057; margin-bottom: 15px; border-left: 4px solid #1971c2; padding-left: 10px; }
         
-        /* スライダー */
-        input[type="range"] { -webkit-appearance: none; width: 100%; margin: 15px 0; background: transparent; }
+        /* スライダー共通設定 */
+        input[type="range"] { -webkit-appearance: none; width: 100%; margin: 10px 0 15px 0; background: transparent; }
         input[type="range"]:focus { outline: none; }
         input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #dee2e6; border-radius: 4px; }
-        input[type="range"]::-webkit-slider-thumb { height: 24px; width: 24px; border-radius: 50%; background: #e03131; cursor: pointer; -webkit-appearance: none; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        input[type="range"]::-webkit-slider-thumb { height: 24px; width: 24px; border-radius: 50%; cursor: pointer; -webkit-appearance: none; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         
+        /* スライダーの色分け */
+        .slider-ph::-webkit-slider-thumb { background: #e03131; } /* pHは赤 */
+        .slider-pka::-webkit-slider-thumb { background: #2f9e44; } /* pKaは緑 */
+
         /* グラフ */
         .chart-wrapper { position: relative; width: 100%; height: 220px; margin-top: 15px; }
 
@@ -87,7 +91,6 @@
             
             <div style="display: flex; justify-content: center;">
                 <div style="width: 100%; max-width: 600px;">
-                    
                     <div style="font-family: 'Times New Roman', serif; font-size: 1.8em; text-align: center; margin-bottom: 20px; color: #1971c2; letter-spacing: 2px;">
                         HA ⇌ H<sup>+</sup> + A<sup>-</sup>
                     </div>
@@ -111,7 +114,7 @@
             
             <div class="panel-layout">
                 <div class="panel-left">
-                    <div class="math-box">
+                    <div class="math-box" style="min-height: 250px;">
                         <div id="math-display-2" style="width: 100%;">
                             </div>
                     </div>
@@ -122,17 +125,24 @@
                 </div>
 
                 <div class="panel-right interaction-box">
-                    <div class="section-title">pHが分子の「比」を決定する</div>
+                    <div class="section-title">pHとpK<sub>a</sub>の「差」が比を決定する</div>
                     
-                    <label style="font-size: 1em; font-weight: bold; color: #333;">
-                        バッファー pH: <span id="val-ph" style="color:#e03131; font-size: 1.3em;">5.0</span>
+                    <label style="font-size: 0.9em; font-weight: bold; color: #333; display: flex; justify-content: space-between;">
+                        <span>分子の固有値 pK<sub>a</sub>:</span>
+                        <span id="val-pka" style="color:#2f9e44; font-size: 1.3em;">5.0</span>
                     </label>
-                    <input type="range" id="slider-ph" min="2" max="8" step="0.1" value="5.0">
+                    <input type="range" id="slider-pka" class="slider-pka" min="2" max="12" step="0.1" value="5.0">
+
+                    <label style="font-size: 0.9em; font-weight: bold; color: #333; display: flex; justify-content: space-between; margin-top: 5px;">
+                        <span>バッファーの pH:</span>
+                        <span id="val-ph" style="color:#e03131; font-size: 1.3em;">5.0</span>
+                    </label>
+                    <input type="range" id="slider-ph" class="slider-ph" min="0" max="14" step="0.1" value="5.0">
                     
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #e9ecef; font-size: 0.9em;">
-                        <span style="color: #666;">※ この分子の pK<sub>a</sub> = 5.0 と仮定</span><br>
-                        <div style="margin-top: 5px; font-weight: bold;">
-                            [A<sup>-</sup>] : [HA] の比率 = <span id="val-ratio" style="color:#1971c2; font-size: 1.2em;">1.00 : 1</span>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid #e9ecef; text-align: center;">
+                        <span style="font-size: 0.8em; color: #666;">pHとpK<sub>a</sub>の差：<span id="val-diff">0.0</span></span>
+                        <div style="margin-top: 5px; font-weight: bold; font-size: 0.95em;">
+                            [A<sup>-</sup>] : [HA] の比率 = <span id="val-ratio" style="color:#1971c2; font-size: 1.3em;">1.00 : 1</span>
                         </div>
                     </div>
 
@@ -280,25 +290,16 @@ function stepMath2(dir) {
 
 // ================= Slide 2: グラフとインタラクション =================
 let hhChart;
-const PKA_VAL = 5.0;
 
 function initChart() {
     const ctx = document.getElementById('hhChart').getContext('2d');
     
-    // シグモイド曲線を描画するためのデータポイント
-    const dataPoints = [];
-    for(let ph = 2.0; ph <= 8.0; ph += 0.1) {
-        let ratio = Math.pow(10, ph - PKA_VAL);
-        let pctA = (ratio / (1 + ratio)) * 100;
-        dataPoints.push({x: ph, y: pctA});
-    }
-
     hhChart = new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [{
                 label: 'A⁻ (電離状態) の割合',
-                data: dataPoints,
+                data: [],
                 borderColor: '#1971c2',
                 backgroundColor: 'rgba(25, 113, 194, 0.1)',
                 borderWidth: 3,
@@ -307,7 +308,7 @@ function initChart() {
                 tension: 0.4
             }, {
                 label: '現在のpH',
-                data: [{x: 5.0, y: 50.0}],
+                data: [],
                 backgroundColor: '#e03131',
                 borderColor: 'white',
                 borderWidth: 2,
@@ -320,9 +321,10 @@ function initChart() {
             maintainAspectRatio: false,
             scales: {
                 x: { 
-                    type: 'linear', position: 'bottom', min: 2, max: 8,
+                    type: 'linear', position: 'bottom', min: 0, max: 14,
                     title: { display: true, text: 'バッファー pH', font: { weight: 'bold' } },
-                    grid: { color: (ctx) => ctx.tick.value === 5.0 ? '#888' : '#eee' }
+                    grid: { color: '#eee' },
+                    ticks: { stepSize: 2 }
                 },
                 y: { 
                     min: 0, max: 100,
@@ -335,28 +337,48 @@ function initChart() {
             }
         }
     });
+
+    updateGraphData();
 }
 
-document.getElementById('slider-ph').addEventListener('input', (e) => {
-    const ph = parseFloat(e.target.value);
+function updateGraphData() {
+    const pka = parseFloat(document.getElementById('slider-pka').value);
+    const ph = parseFloat(document.getElementById('slider-ph').value);
+    
+    document.getElementById('val-pka').innerText = pka.toFixed(1);
     document.getElementById('val-ph').innerText = ph.toFixed(1);
+    
+    const diff = ph - pka;
+    document.getElementById('val-diff').innerText = (diff > 0 ? "+" : "") + diff.toFixed(1);
 
-    // 比率と割合の計算
-    let ratio = Math.pow(10, ph - PKA_VAL);
-    let pctA = (ratio / (1 + ratio)) * 100;
+    // シグモイド曲線全体のデータ更新
+    const dataPoints = [];
+    for(let x = 0; x <= 14; x += 0.2) {
+        let ratio = Math.pow(10, x - pka);
+        let pctA = (ratio / (1 + ratio)) * 100;
+        dataPoints.push({x: x, y: pctA});
+    }
+
+    // 現在のpHにおけるドットの計算
+    let currentRatio = Math.pow(10, ph - pka);
+    let currentPctA = (currentRatio / (1 + currentRatio)) * 100;
 
     let ratioText = "";
-    if(ratio >= 1) {
-        ratioText = `${ratio.toFixed(2)} : 1`;
+    if(currentRatio >= 1) {
+        ratioText = `${currentRatio.toFixed(2)} : 1`;
     } else {
-        ratioText = `1 : ${(1/ratio).toFixed(2)}`;
+        ratioText = `1 : ${(1/currentRatio).toFixed(2)}`;
     }
     document.getElementById('val-ratio').innerText = ratioText;
     
-    // グラフの赤いドットを動かす
-    hhChart.data.datasets[1].data = [{x: ph, y: pctA}];
+    // グラフ描画更新
+    hhChart.data.datasets[0].data = dataPoints;
+    hhChart.data.datasets[1].data = [{x: ph, y: currentPctA}];
     hhChart.update();
-});
+}
+
+document.getElementById('slider-ph').addEventListener('input', updateGraphData);
+document.getElementById('slider-pka').addEventListener('input', updateGraphData);
 
 // 初期化
 window.onload = () => {
