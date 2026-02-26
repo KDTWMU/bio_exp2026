@@ -207,9 +207,9 @@ function update() {
         // 全体のステータス評価
         let avg_charge = total_net_charge / VIZ_SIZE;
         if (avg_charge > 0) { 
-            status.innerText = `正に帯電 (約+${Math.abs(Math.round(avg_charge))})`; status.style.color = "#e03131"; 
+            status.innerText = `正に荷電 (約+${Math.abs(Math.round(avg_charge))})`; status.style.color = "#e03131"; 
         } else if (avg_charge < 0) { 
-            status.innerText = `負に帯電 (約-${Math.abs(Math.round(avg_charge))})`; status.style.color = "#1971c2"; 
+            status.innerText = `負に荷電 (約-${Math.abs(Math.round(avg_charge))})`; status.style.color = "#1971c2"; 
         } else { 
             status.innerText = "ほぼ中性 (±0)"; status.style.color = "#495057"; 
         }
