@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>吸光度・分光光度計シミュレーター</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 10px; margin: 0; color: #333; }
+        .container { max-width: 950px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; }
+        
+        .header { border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 10px; }
+        .header h2 { font-size: 1.4em; margin: 0 0 5px 0; color: #2c3e50; }
+        .header p { color: #666; font-size: 0.85em; margin: 0; }
+
+        /* コントロールエリア */
+        .controls { background: #f1f3f5; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .control-group { margin-bottom: 10px; }
+        .control-group label { display: flex; justify-content: space-between; font-weight: bold; font-size: 0.9em; margin-bottom: 5px; color: #495057; }
+        
+        input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0; }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #dee2e6; border-radius: 4px; }
+        input[type="range"]::-webkit-slider-thumb { height: 24px; width: 24px; border-radius: 50%; cursor: pointer; -webkit-appearance: none; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        
+        .slider-mol::-webkit-slider-thumb { background: #e03131; } /* 分子スライダー */
+        .slider-wl::-webkit-slider-thumb { background: #1971c2; } /* 波長スライダー */
+        .slider-conc::-webkit-slider-thumb { background: #2f9e44; } /* 濃度スライダー */
+
+        /* メインダッシュボード（3パネル） */
+        .dashboard { display: grid; gap: 15px; grid-template-columns: 1fr; }
+        @media (min-width: 800px) { .dashboard { grid-template-columns: 1fr 1.2fr 1fr; } }
+        
+        .panel { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; }
+        .panel-title { font-size: 0.95em; font-weight: bold; color: #34495e; border-left: 4px solid #1971c2; padding-left: 8px; margin-bottom: 15px; }
+
+        /* パネル1: ミクロ (軌道) */
+        .orbital-diagram { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; min-height: 180px; }
+        .orbital-line { width: 80%; border-top: 3px solid #333; position: absolute; text-align: center; }
+        .orbital-line span { background: white; padding: 0 5px; font-size: 0.8em; font-weight: bold; color: #666; position: relative; top: -10px; }
+        .lumo { transition: top 0.4s ease; border-color: #e03131; }
+        .lumo span { color: #e03131; }
+        .homo { transition: bottom 0.4s ease; border-color: #1971c2; }
+        .homo span { color: #1971c2; }
+        .delta-e-arrow { position: absolute; width: 2px; background: #666; transition: all 0.4s ease; display: flex; align-items: center; justify-content: center; border-left: 2px dashed #999; }
+        .delta-e-arrow::before, .delta-e-arrow::after { content: ''; position: absolute; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+        .delta-e-arrow::before { top: 0; border-bottom: 6px solid #666; }
+        .delta-e-arrow::after { bottom: 0; border-top: 6px solid #666; }
+        .delta-e-label { background: white; padding: 2px; font-weight: bold; font-family: serif; font-size: 0.9em; }
+        .struct-text { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.1em; text-align: center; margin-top: 20px; color: #444; min-height: 40px; }
+
+        /* パネル2: マクロ (グラフ) */
+        .chart-container { position: relative; width: 100%; height: 180px; flex-grow: 1; }
+
+        /* パネル3: 測定 (セル) */
+        .spectrometer { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 10px; }
+        .light-path { display: flex; align-items: center; width: 100%; justify-content: center; margin-bottom: 20px; }
+        .light-beam { height: 15px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; color: white; text-shadow: 0 0 2px black; }
+        .beam-in { width: 60px; background: linear-gradient(90deg, transparent, #f1c40f); }
+        .cuvette { width: 40px; height: 70px; border: 2px solid #ccc; border-top: none; border-radius: 0 0 4px 4px; position: relative; background: rgba(255,255,255,0.8); z-index: 2; box-shadow: inset 0 -10px 20px rgba(0,0,0,0.1); transition: background-color 0.4s; }
+        .beam-out { width: 60px; background: #f1c40f; transform-origin: left center; }
+        
+        .metrics-box { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; border-radius: 8px; width: 100%; text-align: center; font-size: 0.9em; line-height: 1.5; }
+        .val-highlight { font-weight: bold; color: #e03131; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>光吸収・分光光度計シミュレーター</h2>
+        <p>共役系の広がりとHOMO-LUMO間隙、吸収スペクトル、Lambert-Beerの法則の連動</p>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label><span>1. 分子・共役系の長さ (n) を選択:</span> <span id="lbl-mol" style="color:#e03131;">エチレン (n=1)</span></label>
+            <input type="range" id="slider-mol" class="slider-mol" min="0" max="5" step="1" value="0">
+        </div>
+        <div style="display: flex; gap: 20px;">
+            <div class="control-group" style="flex: 1;">
+                <label><span>2. 測定波長 (λ):</span> <span id="lbl-wl" style="color:#1971c2;">280 nm</span></label>
+                <input type="range" id="slider-wl" class="slider-wl" min="150" max="600" step="5" value="280">
+            </div>
+            <div class="control-group" style="flex: 1;">
+                <label><span>3. 試料の濃度 (c):</span> <span id="lbl-conc" style="color:#2f9e44;">0.05 mM</span></label>
+                <input type="range" id="slider-conc" class="slider-conc" min="0.01" max="0.2" step="0.01" value="0.05">
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="panel-title">ミクロ: 電子軌道と ΔE</div>
+            <div class="orbital-diagram">
+                <div class="orbital-line lumo" id="orb-lumo" style="top: 10%;"><span>LUMO (空軌道)</span></div>
+                <div class="delta-e-arrow" id="orb-arrow" style="top: 10%; bottom: 10%;">
+                    <div class="delta-e-label">ΔE</div>
+                </div>
+                <div class="orbital-line homo" id="orb-homo" style="bottom: 10%;"><span>HOMO (占有軌道)</span></div>
+            </div>
+            <div class="struct-text" id="struct-text">CH₂=CH₂</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">マクロ: 吸収スペクトル</div>
+            <div class="chart-container">
+                <canvas id="specChart"></canvas>
+            </div>
+            <div style="text-align: center; font-size: 0.8em; color: #666; margin-top: 5px;">
+                λmax = <span id="val-lmax" style="font-weight:bold;">165</span> nm
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">測定: 仮想 分光光度計</div>
+            <div class="spectrometer">
+                <div class="light-path">
+                    <div class="light-beam beam-in" id="beam-in">I₀</div>
+                    <div class="cuvette" id="cuvette"></div>
+                    <div class="light-beam beam-out" id="beam-out">I</div>
+                </div>
+                <div class="metrics-box">
+                    <div>吸光度 (A) = ε c l</div>
+                    <div style="margin: 5px 0;">
+                        A = <span id="val-a" class="val-highlight">0.000</span>
+                    </div>
+                    <div>透過率 (T) = <span id="val-t" style="font-weight:bold; color:#1971c2;">100.0</span> %</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 分子データ (lambda: 吸収極大波長 nm, eps: モル吸光係数 L/(mol·cm))
+const MOLECULES = [
+    { name: 'エチレン (n=1)', lambda: 165, eps: 10000, struct: 'CH₂=CH₂', color: 'rgba(255,255,255,0.8)' },
+    { name: 'ブタジエン (n=2)', lambda: 217, eps: 21000, struct: 'CH₂=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
+    { name: 'ヘキサトリエン (n=3)', lambda: 256, eps: 35000, struct: 'CH₂=CH-CH=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
+    { name: 'オクタテトラエン (n=4)', lambda: 290, eps: 50000, struct: 'CH₂=CH-(CH=CH)₂-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
+    { name: 'β-カロテン (n=11)', lambda: 455, eps: 130000, struct: '(長大なポリエン構造)', color: 'rgba(255, 140, 0, 0.4)' },
+    { name: 'トリプトファン (タンパク質)', lambda: 280, eps: 5500, struct: 'インドール環 (芳香族)', color: 'rgba(255,255,255,0.8)' }
+];
+
+let specChart;
+
+function initChart() {
+    const ctx = document.getElementById('specChart').getContext('2d');
+    specChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: '吸収スペクトル',
+                data: [],
+                borderColor: '#1971c2',
+                backgroundColor: 'rgba(25, 113, 194, 0.1)',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { 
+                    type: 'linear', position: 'bottom', min: 150, max: 600,
+                    title: { display: true, text: '波長 (nm)' },
+                    grid: { color: '#eee' }
+                },
+                y: { 
+                    min: 0, max: 150000,
+                    title: { display: true, text: 'モル吸光係数 ε' },
+                    ticks: { callback: function(val) { return val / 1000 + 'k'; } }
+                }
+            },
+            plugins: { 
+                legend: { display: false },
+                annotation: { // 簡単な縦線描画用のカスタムプラグイン
+                    afterDraw: chart => {
+                        const wl = parseFloat(document.getElementById('slider-wl').value);
+                        const xAxis = chart.scales.x;
+                        const yAxis = chart.scales.y;
+                        const xPixel = xAxis.getPixelForValue(wl);
+                        const ctx = chart.ctx;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(xPixel, yAxis.top);
+                        ctx.lineTo(xPixel, yAxis.bottom);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = '#e03131';
+                        ctx.setLineDash([5, 5]);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'verticalLine',
+            afterDraw: (chart) => chart.options.plugins.annotation.afterDraw(chart)
+        }]
+    });
+}
+
+// 測定波長における現在のεをガウス関数で計算
+function calcEpsilon(wl, lmax, epsMax) {
+    const sigma = 30; // ピークの広がり幅
+    return epsMax * Math.exp(-Math.pow(wl - lmax, 2) / (2 * Math.pow(sigma, 2)));
+}
+
+// 光源の色を波長から簡易的に決定
+function getLightColor(wl) {
+    if (wl < 380) return '#bdc3c7'; // UVはグレーで表現
+    if (wl < 450) return '#9b59b6'; // 紫/青
+    if (wl < 500) return '#3498db'; // 水色
+    if (wl < 550) return '#2ecc71'; // 緑
+    if (wl < 600) return '#f1c40f'; // 黄/オレンジ
+    return '#e74c3c'; // 赤
+}
+
+function updateSimulation() {
+    // 値の取得
+    const molIdx = parseInt(document.getElementById('slider-mol').value);
+    const mol = MOLECULES[molIdx];
+    const wl = parseFloat(document.getElementById('slider-wl').value);
+    const conc = parseFloat(document.getElementById('slider-conc').value); // mM = 10^-3 M
+
+    // UIテキスト更新
+    document.getElementById('lbl-mol').innerText = mol.name;
+    document.getElementById('lbl-wl').innerText = wl + " nm";
+    document.getElementById('lbl-conc').innerText = conc.toFixed(2) + " mM";
+    document.getElementById('struct-text').innerText = mol.struct;
+    document.getElementById('val-lmax').innerText = mol.lambda;
+
+    // パネル1: HOMO-LUMO の更新
+    // エネルギー差 ΔE は 1/λ に比例。エチレン(165nm)を基準にする。
+    const gapRatio = 165 / mol.lambda; 
+    // gapRatio = 1.0 (最大) 〜 約 0.36 (カロテン)
+    // CSSの top と bottom を調整して隙間を変化させる (最小10%, 最大35%ずつ寄せる)
+    const margin = 10 + (1 - gapRatio) * 30; 
+    document.getElementById('orb-lumo').style.top = margin + "%";
+    document.getElementById('orb-homo').style.bottom = margin + "%";
+    document.getElementById('orb-arrow').style.top = margin + "%";
+    document.getElementById('orb-arrow').style.bottom = margin + "%";
+
+    // パネル2: グラフ更新
+    const dataPoints = [];
+    for (let x = 150; x <= 600; x += 2) {
+        dataPoints.push({ x: x, y: calcEpsilon(x, mol.lambda, mol.eps) });
+    }
+    specChart.data.datasets[0].data = dataPoints;
+    specChart.update();
+
+    // パネル3: セルと吸光度の更新
+    const currentEps = calcEpsilon(wl, mol.lambda, mol.eps);
+    // 吸光度 A = ε * c * l (l=1cm, cはMol/L)
+    // concはmMなので M に直す: c = conc * 0.001
+    let A = currentEps * (conc * 0.001) * 1;
+    if (A < 0.001) A = 0; // 微小な誤差をカット
+
+    // 透過率 T = 10^-A * 100
+    const T = Math.pow(10, -A) * 100;
+
+    document.getElementById('val-a').innerText = A.toFixed(3);
+    document.getElementById('val-t').innerText = T.toFixed(1);
+
+    // アニメーションの反映
+    const lightColor = getLightColor(wl);
+    document.getElementById('beam-in').style.background = `linear-gradient(90deg, transparent, ${lightColor})`;
+    
+    // 透過光はTに比例して「細く」「透明に」なるようにスケールダウン
+    const beamOut = document.getElementById('beam-out');
+    beamOut.style.background = lightColor;
+    const scale = Math.max(0, T / 100);
+    beamOut.style.transform = `scaleY(${0.1 + scale * 0.9})`; // 完全に0にはせず線だけ残す
+    beamOut.style.opacity = 0.2 + scale * 0.8;
+
+    // セルの色 (カロテンならオレンジ、他は透明)
+    document.getElementById('cuvette').style.backgroundColor = mol.color;
+}
+
+// イベントリスナー
+document.getElementById('slider-mol').addEventListener('input', updateSimulation);
+document.getElementById('slider-wl').addEventListener('input', updateSimulation);
+document.getElementById('slider-conc').addEventListener('input', updateSimulation);
+
+// 初期実行
+window.onload = () => {
+    initChart();
+    updateSimulation();
+};
+</script>
+
+</body>
+</html>
