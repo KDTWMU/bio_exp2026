@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stepwise Amino Acid & Ion Simulator (Mobile Friendly)</title>
+    <title>アミノ酸pHシミュレーター</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 10px; margin: 0; }
         .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
@@ -12,28 +12,30 @@
         
         .viz-box { 
             position: relative; background: #fff; border: 1px solid #e0e0e0; 
-            border-radius: 12px; overflow: hidden; display: flex; justify-content: space-around; align-items: center;
+            border-radius: 12px; overflow: hidden; display: flex; justify-content: space-evenly; align-items: center;
             background: radial-gradient(circle at center, #ffffff 0%, #f8f9fa 100%);
-            padding: 15px; flex-wrap: wrap; gap: 10px; min-height: 250px;
+            padding: 15px; flex-wrap: wrap; gap: 8px; min-height: 220px;
         }
         
         .h-ion { position: absolute; color: #e03131; font-weight: bold; pointer-events: none; z-index: 1; }
         
+        /* 分子カードを小さく、少し半透明にして背景を透かす */
         .aa-molecule { 
-            z-index: 10; padding: 12px 5px; border-radius: 10px; border: 1px solid #ddd;
-            background: rgba(255,255,255,0.95); text-align: center;
-            flex: 1 1 40%; /* スマホでは2列になるように設定 */
-            min-width: 120px;
+            z-index: 10; padding: 8px 5px; border-radius: 8px; border: 1px solid #ddd;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(2px);
+            text-align: center;
+            flex: 0 1 40%; /* 幅を広げすぎない */
+            max-width: 110px; /* 最大幅を制限 */
             transition: all 0.3s ease-in-out;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
         
-        .struct { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.1em; margin: 8px 0; }
-        .ion-struct { font-size: 2.2em; margin: 15px 0; font-family: 'Arial', sans-serif; }
+        /* 構造式のフォントサイズも縮小 */
+        .struct { font-family: 'Courier New', monospace; font-weight: bold; font-size: 0.95em; margin: 6px 0; }
+        .ion-struct { font-size: 1.8em; margin: 10px 0; font-family: 'Arial', sans-serif; }
         
-        .controls { margin-top: 20px; padding: 15px; background: #f1f3f5; border-radius: 12px; }
+        .controls { margin-top: 15px; padding: 15px; background: #f1f3f5; border-radius: 12px; }
         
-        /* スマホ用: スライダーをタッチしやすく大きくする */
         input[type="range"] {
             -webkit-appearance: none; width: 100%; margin: 15px 0; background: transparent;
         }
@@ -42,33 +44,30 @@
             width: 100%; height: 8px; cursor: pointer; background: #ced4da; border-radius: 4px;
         }
         input[type="range"]::-webkit-slider-thumb {
-            height: 30px; width: 30px; border-radius: 50%; background: #1971c2;
-            cursor: pointer; -webkit-appearance: none; margin-top: -11px;
+            height: 28px; width: 28px; border-radius: 50%; background: #1971c2;
+            cursor: pointer; -webkit-appearance: none; margin-top: -10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         
-        /* スマホ用: ドロップダウンをタップしやすくする */
         select { 
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; 
-            font-size: 16px; /* 16pxにするとiOS Safariで勝手にズームされない */
-            background-color: white; margin-top: 5px;
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; 
+            font-size: 16px; background-color: white; margin-top: 5px;
         }
         
-        /* スマホ用: 画面幅が狭いときは数値を縦に並べる */
-        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; text-align: center; }
-        .metric-card { background: white; padding: 12px 5px; border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.9em; }
-        .val { display: block; font-size: 1.3em; font-weight: bold; color: #2c3e50; margin-top: 5px; }
+        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; text-align: center; }
+        .metric-card { background: white; padding: 10px 5px; border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.85em; }
+        .val { display: block; font-size: 1.2em; font-weight: bold; color: #2c3e50; margin-top: 3px; }
         
         @media (max-width: 600px) {
-            .metrics { grid-template-columns: 1fr; } /* 縦一列に変更 */
-            .metric-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; }
-            .metric-card span:first-child { color: #666; font-size: 1.1em; }
-            .val { margin-top: 0; }
+            .metrics { grid-template-columns: 1fr; } 
+            .metric-card { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
+            .metric-card span:first-child { color: #666; font-size: 1.05em; }
+            .val { margin-top: 0; font-size: 1.1em; }
         }
 
-        .pos { border-color: #ff8787; color: #e03131; box-shadow: 0 0 15px rgba(224,49,49,0.2); }
+        .pos { border-color: #ff8787; color: #e03131; box-shadow: 0 0 10px rgba(224,49,49,0.2); }
         .neu { border-color: #ced4da; color: #495057; }
-        .neg { border-color: #74c0fc; color: #1971c2; box-shadow: 0 0 15px rgba(25,113,194,0.2); }
+        .neg { border-color: #74c0fc; color: #1971c2; box-shadow: 0 0 10px rgba(25,113,194,0.2); }
     </style>
 </head>
 <body>
@@ -79,21 +78,20 @@
         <p style="color: #666; font-size: 0.85em; margin:0;">pHの変化に応じた遷移と定電荷イオンの比較</p>
     </div>
 
-    <div class="viz-box" id="viz">
-        </div>
+    <div class="viz-box" id="viz"></div>
 
     <div class="controls">
-        <label style="display:block; font-weight:bold;">バッファー pH: <span id="ph-display" style="color:#333; font-size:1.3em; display:inline-block; margin-left:10px;">7.0</span></label>
+        <label style="display:block; font-weight:bold;">バッファー pH: <span id="ph-display" style="color:#333; font-size:1.2em; display:inline-block; margin-left:10px;">7.0</span></label>
         <input type="range" id="ph-input" min="1" max="14" step="0.1" value="7.0">
         
-        <label style="display:block; margin-top:20px; font-weight:bold;">分子・イオンを選択:</label>
+        <label style="display:block; margin-top:15px; font-weight:bold;">分子・イオンを選択:</label>
         <select id="aa-select"></select>
     </div>
 
     <div class="metrics">
         <div class="metric-card"><span>等電点 (pI)</span><span class="val" id="pi-val">-</span></div>
         <div class="metric-card"><span>pH - pI</span><span class="val" id="diff-val">-</span></div>
-        <div class="metric-card"><span>平均電荷</span><span class="val" id="charge-status" style="font-size:1.1em;">-</span></div>
+        <div class="metric-card"><span>平均電荷</span><span class="val" id="charge-status" style="font-size:1.0em;">-</span></div>
     </div>
 </div>
 
@@ -127,13 +125,13 @@ function init() {
     }
 
     const viz = document.getElementById('viz');
-    for(let i=0; i<40; i++) { // スマホ向けにH+の描画数を少し減らして軽量化
+    for(let i=0; i<45; i++) { 
         let h = document.createElement('div');
         h.className = 'h-ion';
         h.innerText = '+';
         h.style.left = Math.random() * 90 + 5 + '%';
         h.style.top = Math.random() * 90 + 5 + '%';
-        h.style.fontSize = (Math.random() * 10 + 12) + 'px';
+        h.style.fontSize = (Math.random() * 8 + 14) + 'px';
         viz.appendChild(h);
     }
 
@@ -186,7 +184,7 @@ function update() {
 
             mol.className = `aa-molecule ${cls}`;
             mol.innerHTML = `
-                <div style="font-size:0.85em; opacity:0.8; font-weight:bold; margin-bottom:4px;">${state}</div>
+                <div style="font-size:0.75em; opacity:0.8; font-weight:bold; margin-bottom:2px;">${state}</div>
                 <div class="struct">${nh}<br>|<br>CH-R<br>|<br>${coo}</div>
             `;
         }
@@ -215,7 +213,7 @@ function update() {
 
             mol.className = `aa-molecule ${cls}`;
             mol.innerHTML = `
-                <div style="font-size:0.85em; opacity:0.8; font-weight:bold; margin-bottom:4px;">${state}</div>
+                <div style="font-size:0.75em; opacity:0.8; font-weight:bold; margin-bottom:2px;">${state}</div>
                 <div class="struct ion-struct">${data.symbol}</div>
             `;
         }
