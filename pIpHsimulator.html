@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Stepwise Amino Acid & Ion Simulator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        
+        .viz-box { 
+            position: relative; height: 300px; background: #fff; border: 1px solid #e0e0e0; 
+            border-radius: 12px; overflow: hidden; display: flex; justify-content: space-around; align-items: center;
+            background: radial-gradient(circle at center, #ffffff 0%, #f8f9fa 100%);
+        }
+        
+        .h-ion { position: absolute; color: #e03131; font-weight: bold; pointer-events: none; z-index: 1; }
+        
+        .aa-molecule { 
+            z-index: 10; padding: 15px; border-radius: 10px; border: 1px solid #ddd;
+            background: rgba(255,255,255,0.95); text-align: center; min-width: 100px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .struct { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.1em; margin: 8px 0; }
+        .ion-struct { font-size: 2.5em; margin: 20px 0; font-family: 'Arial', sans-serif; }
+        
+        .controls { margin-top: 25px; padding: 20px; background: #f1f3f5; border-radius: 12px; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        
+        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; text-align: center; }
+        .metric-card { background: white; padding: 10px; border-radius: 8px; border: 1px solid #dee2e6; }
+        .val { display: block; font-size: 1.2em; font-weight: bold; color: #2c3e50; }
+        
+        .pos { border-color: #ff8787; color: #e03131; box-shadow: 0 0 15px rgba(224,49,49,0.2); }
+        .neu { border-color: #ced4da; color: #495057; }
+        .neg { border-color: #74c0fc; color: #1971c2; box-shadow: 0 0 15px rgba(25,113,194,0.2); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0;">段階的電離・イオンシミュレーター</h2>
+        <p style="color: #666; font-size: 0.9em;">pHの変化に応じたアミノ酸の遷移と、定電荷イオンの挙動比較</p>
+    </div>
+
+    <div class="viz-box" id="viz">
+        </div>
+
+    <div class="controls">
+        <label style="display:block; margin-bottom:10px; font-weight:bold;">バッファー pH: <span id="ph-display" style="color:#333; font-size:1.2em;">7.0</span></label>
+        <input type="range" id="ph-input" min="1" max="14" step="0.1" value="7.0">
+        
+        <label style="display:block; margin:20px 0 10px; font-weight:bold;">分子・イオンを選択:</label>
+        <select id="aa-select" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;"></select>
+    </div>
+
+    <div class="metrics">
+        <div class="metric-card"><span>等電点 (pI)</span><span class="val" id="pi-val">-</span></div>
+        <div class="metric-card"><span>pH - pI</span><span class="val" id="diff-val">-</span></div>
+        <div class="metric-card"><span>平均電荷</span><span id="charge-status" style="font-weight:bold; display:block; font-size:1.2em; margin-top:3px;">-</span></div>
+    </div>
+</div>
+
+<script>
+// アミノ酸と無機イオンのデータを統合・分類
+const MOLECULE_DATA = {
+    'グリシン': { type: 'amino', pi: 5.97 },
+    'アラニン': { type: 'amino', pi: 6.00 },
+    'バリン': { type: 'amino', pi: 5.96 },
+    'アスパラギン酸': { type: 'amino', pi: 2.77 },
+    'グルタミン酸': { type: 'amino', pi: 3.22 },
+    'ヒスチジン': { type: 'amino', pi: 7.59 },
+    'リシン': { type: 'amino', pi: 9.74 },
+    'アルギニン': { type: 'amino', pi: 10.76 },
+    'ナトリウムイオン (Na+)': { type: 'ion', charge: 'pos', symbol: 'Na+' },
+    '塩化物イオン (Cl-)': { type: 'ion', charge: 'neg', symbol: 'Cl-' }
+};
+
+const VIZ_SIZE = 4; // 表示する分子数
+
+function init() {
+    const select = document.getElementById('aa-select');
+    for (let name in MOLECULE_DATA) {
+        let opt = document.createElement('option');
+        opt.value = name;
+        if (MOLECULE_DATA[name].type === 'amino') {
+            opt.innerText = `${name} (pI: ${MOLECULE_DATA[name].pi})`;
+        } else {
+            opt.innerText = name;
+        }
+        select.appendChild(opt);
+    }
+
+    // H+背景の作成
+    const viz = document.getElementById('viz');
+    for(let i=0; i<60; i++) {
+        let h = document.createElement('div');
+        h.className = 'h-ion';
+        h.innerText = '+';
+        h.style.left = Math.random() * 95 + '%';
+        h.style.top = Math.random() * 95 + '%';
+        h.style.fontSize = (Math.random() * 10 + 10) + 'px';
+        viz.appendChild(h);
+    }
+
+    // 分子の器を作成
+    for(let i=0; i<VIZ_SIZE; i++) {
+        let m = document.createElement('div');
+        m.className = 'aa-molecule';
+        m.id = `mol-${i}`;
+        viz.appendChild(m);
+    }
+
+    document.getElementById('ph-input').oninput = update;
+    document.getElementById('aa-select').onchange = update;
+    update();
+}
+
+function update() {
+    const ph = parseFloat(document.getElementById('ph-input').value);
+    const selectedName = document.getElementById('aa-select').value;
+    const data = MOLECULE_DATA[selectedName];
+    
+    document.getElementById('ph-display').innerText = ph.toFixed(1);
+
+    // H+背景の不透明度をpHに連動 (アミノ酸・イオン共通)
+    const hIons = document.querySelectorAll('.h-ion');
+    const opacity = Math.max(0, 1.2 - (ph / 9));
+    hIons.forEach(h => h.style.opacity = opacity);
+
+    const status = document.getElementById('charge-status');
+
+    if (data.type === 'amino') {
+        // --- アミノ酸の処理（pHによって変動する） ---
+        const pi = data.pi;
+        const diff = ph - pi;
+        
+        document.getElementById('pi-val').innerText = pi.toFixed(2);
+        document.getElementById('diff-val').innerText = (diff > 0 ? "+" : "") + diff.toFixed(2);
+
+        for(let i=0; i<VIZ_SIZE; i++) {
+            const mol = document.getElementById(`mol-${i}`);
+            const offset = (i - (VIZ_SIZE-1)/2) * 0.4; 
+            const localDiff = diff + offset;
+
+            let state, nh, coo, cls;
+
+            if (localDiff < -0.8) {
+                state = "正電荷 (+)"; nh = "NH3+"; coo = "COOH"; cls = "pos";
+            } else if (localDiff > 0.8) {
+                state = "負電荷 (-)"; nh = "NH2"; coo = "COO-"; cls = "neg";
+            } else {
+                state = "中性 (0)"; nh = "NH3+"; coo = "COO-"; cls = "neu"; 
+            }
+
+            mol.className = `aa-molecule ${cls}`;
+            mol.innerHTML = `
+                <div style="font-size:0.8em; opacity:0.7; font-weight:bold;">${state}</div>
+                <div class="struct">${nh}<br>|<br>CH-R<br>|<br>${coo}</div>
+            `;
+        }
+
+        if (diff < -1) { 
+            status.innerText = "正電荷 (+)"; status.style.color = "#e03131"; 
+        } else if (diff > 1) { 
+            status.innerText = "負電荷 (-)"; status.style.color = "#1971c2"; 
+        } else { 
+            status.innerText = "ほぼ中性"; status.style.color = "#495057"; 
+        }
+
+    } else if (data.type === 'ion') {
+        // --- 無機イオンの処理（pHの影響を受けない） ---
+        document.getElementById('pi-val').innerText = "N/A";
+        document.getElementById('diff-val').innerText = "N/A";
+
+        for(let i=0; i<VIZ_SIZE; i++) {
+            const mol = document.getElementById(`mol-${i}`);
+            let state, cls;
+
+            if (data.charge === 'pos') {
+                state = "正電荷 (+)"; cls = "pos";
+            } else {
+                state = "負電荷 (-)"; cls = "neg";
+            }
+
+            mol.className = `aa-molecule ${cls}`;
+            mol.innerHTML = `
+                <div style="font-size:0.8em; opacity:0.7; font-weight:bold;">${state}</div>
+                <div class="struct ion-struct">${data.symbol}</div>
+            `;
+        }
+
+        if (data.charge === 'pos') {
+            status.innerText = "常に正電荷 (+)"; status.style.color = "#e03131";
+        } else {
+            status.innerText = "常に負電荷 (-)"; status.style.color = "#1971c2";
+        }
+    }
+}
+
+window.onload = init;
+</script>
+
+</body>
+</html>
