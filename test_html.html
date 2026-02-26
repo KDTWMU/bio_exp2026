@@ -216,7 +216,7 @@ function update() {
         const particle = document.createElement('div');
         particle.className = 'protein-particle';
         particle.style.backgroundColor = p.color;
-        particle.innerText = p.name.substring(4, -1); // スマホ向けに文字数を省略
+        particle.innerText = p.name.slice(5, -1); // スマホ向けに文字数を省略
 
         if (diff <= 0) {
             // 素通り (Flowthrough) - 緑のエリアへ
