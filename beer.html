@@ -61,7 +61,17 @@
         .beam-out { width: 60px; background: #f1c40f; transform-origin: left center; }
         
         .metrics-box { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; border-radius: 8px; width: 100%; text-align: center; font-size: 0.9em; line-height: 1.5; }
-        .val-highlight { font-weight: bold; color: #e03131; font-size: 1.2em; }
+        .val-highlight { font-weight: bold; font-size: 1.2em; transition: color 0.3s; }
+        
+        /* 精度低下アラート用のスタイル */
+        .alert-box {
+            background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9;
+            padding: 8px; border-radius: 6px; font-size: 0.85em; font-weight: bold;
+            margin-top: 10px; text-align: center; display: none; line-height: 1.4;
+            animation: flashWarning 1s infinite alternate;
+        }
+        @keyframes flashWarning { from { box-shadow: 0 0 0px rgba(224,49,49,0); } to { box-shadow: 0 0 8px rgba(224,49,49,0.4); } }
+
     </style>
 </head>
 <body>
@@ -84,7 +94,7 @@
             </div>
             <div class="control-group" style="flex: 1;">
                 <label><span>3. 試料の濃度 (c):</span> <span id="lbl-conc" style="color:#2f9e44;">0.05 mM</span></label>
-                <input type="range" id="slider-conc" class="slider-conc" min="0.01" max="0.6" step="0.01" value="0.05">
+                <input type="range" id="slider-conc" class="slider-conc" min="0.01" max="0.2" step="0.01" value="0.05">
             </div>
         </div>
     </div>
@@ -123,9 +133,13 @@
                 <div class="metrics-box">
                     <div>吸光度 (A) = ε c l</div>
                     <div style="margin: 5px 0;">
-                        A = <span id="val-a" class="val-highlight">0.000</span>
+                        A = <span id="val-a" class="val-highlight" style="color:#e03131;">0.000</span>
                     </div>
                     <div>透過率 (T) = <span id="val-t" style="font-weight:bold; color:#1971c2;">100.0</span> %</div>
+                    
+                    <div id="alert-msg" class="alert-box">
+                        ⚠️ 透過率が 0.1% 以下です。<br>測定精度が極端に低いため、試料を希釈してください。
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,7 +147,6 @@
 </div>
 
 <script>
-// 分子データに、グラフの表示フォーカス用スケール（xMin, xMax, yMax）を追加
 const MOLECULES = [
     { name: 'エチレン (n=1)', lambda: 165, eps: 10000, struct: 'CH₂=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 100, xMax: 250, yMax: 12000 },
     { name: 'ブタジエン (n=2)', lambda: 217, eps: 21000, struct: 'CH₂=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 100, xMax: 350, yMax: 25000 },
@@ -209,13 +222,11 @@ function initChart() {
     });
 }
 
-// 測定波長における現在のεをガウス関数で計算
 function calcEpsilon(wl, lmax, epsMax) {
-    const sigma = 30; // ピークの広がり幅
+    const sigma = 30;
     return epsMax * Math.exp(-Math.pow(wl - lmax, 2) / (2 * Math.pow(sigma, 2)));
 }
 
-// 光源の色を波長から簡易的に決定
 function getLightColor(wl) {
     if (wl < 380) return '#bdc3c7'; 
     if (wl < 450) return '#9b59b6'; 
@@ -231,14 +242,12 @@ function updateSimulation() {
     const wl = parseFloat(document.getElementById('slider-wl').value);
     const conc = parseFloat(document.getElementById('slider-conc').value);
 
-    // UIテキスト更新
     document.getElementById('lbl-mol').innerText = mol.name;
     document.getElementById('lbl-wl').innerText = wl + " nm";
     document.getElementById('lbl-conc').innerText = conc.toFixed(2) + " mM";
     document.getElementById('struct-text').innerText = mol.struct;
     document.getElementById('val-lmax').innerText = mol.lambda;
 
-    // パネル1: HOMO-LUMO の更新
     const gapRatio = 165 / mol.lambda; 
     const margin = 10 + (1 - gapRatio) * 30; 
     document.getElementById('orb-lumo').style.top = margin + "%";
@@ -246,29 +255,43 @@ function updateSimulation() {
     document.getElementById('orb-arrow').style.top = margin + "%";
     document.getElementById('orb-arrow').style.bottom = margin + "%";
 
-    // パネル2: グラフ更新（フォーカスとデータ生成）
     specChart.options.scales.x.min = mol.xMin;
     specChart.options.scales.x.max = mol.xMax;
     specChart.options.scales.y.max = mol.yMax;
 
     const dataPoints = [];
-    // グラフの描画範囲より少し広めにデータを生成しておく
     for (let x = 50; x <= 700; x += 2) {
         dataPoints.push({ x: x, y: calcEpsilon(x, mol.lambda, mol.eps) });
     }
     specChart.data.datasets[0].data = dataPoints;
     specChart.update();
 
-    // パネル3: セルと吸光度の更新
     const currentEps = calcEpsilon(wl, mol.lambda, mol.eps);
     let A = currentEps * (conc * 0.001) * 1;
     if (A < 0.001) A = 0; 
     const T = Math.pow(10, -A) * 100;
 
-    document.getElementById('val-a').innerText = A.toFixed(3);
-    document.getElementById('val-t').innerText = T.toFixed(1);
+    // アラートの表示制御 (透過率 <= 0.1%)
+    const alertBox = document.getElementById('alert-msg');
+    const valA = document.getElementById('val-a');
+    if (T <= 0.1) {
+        alertBox.style.display = 'block';
+        valA.style.color = '#c92a2a'; // 吸光度の文字を暗い赤に
+    } else {
+        alertBox.style.display = 'none';
+        valA.style.color = '#e03131'; // 通常の赤に戻す
+    }
 
-    // アニメーションの反映
+    // 値が大きすぎる場合は「>3.000」などと表示を振り切らせても良いが、今回はそのまま表示
+    valA.innerText = A.toFixed(3);
+    
+    // 透過率の表示更新（非常に小さい場合は指数表記や0表示を防ぐ処理）
+    if (T < 0.001 && T > 0) {
+        document.getElementById('val-t').innerText = "< 0.001";
+    } else {
+        document.getElementById('val-t').innerText = T.toFixed(2);
+    }
+
     const lightColor = getLightColor(wl);
     document.getElementById('beam-in').style.background = `linear-gradient(90deg, transparent, ${lightColor})`;
     
@@ -281,12 +304,10 @@ function updateSimulation() {
     document.getElementById('cuvette').style.backgroundColor = mol.color;
 }
 
-// イベントリスナー
 document.getElementById('slider-mol').addEventListener('input', updateSimulation);
 document.getElementById('slider-wl').addEventListener('input', updateSimulation);
 document.getElementById('slider-conc').addEventListener('input', updateSimulation);
 
-// 初期実行
 window.onload = () => {
     initChart();
     updateSimulation();
