@@ -140,7 +140,7 @@ const MOLECULES = [
     { name: 'ヘキサトリエン (n=3)', lambda: 256, eps: 35000, struct: 'CH₂=CH-CH=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
     { name: 'オクタテトラエン (n=4)', lambda: 290, eps: 50000, struct: 'CH₂=CH-(CH=CH)₂-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
     { name: 'β-カロテン (n=11)', lambda: 455, eps: 130000, struct: '(長大なポリエン構造)', color: 'rgba(255, 140, 0, 0.4)' },
-    { name: 'トリプトファン (タンパク質)', lambda: 280, eps: 5500, struct: 'インドール環 (芳香族)', color: 'rgba(255,255,255,0.8)' }
+    { name: 'トリプトファン (芳香環)', lambda: 280, eps: 5500, struct: 'インドール環 (タンパク質)', color: 'rgba(255,255,255,0.8)' }
 ];
 
 let specChart;
@@ -154,7 +154,7 @@ function initChart() {
                 label: '吸収スペクトル',
                 data: [],
                 borderColor: '#1971c2',
-                backgroundColor: 'rgba(25, 113, 194, 0.1)',
+                backgroundColor: 'rgba(25, 113, 194, 0.2)',
                 borderWidth: 2,
                 pointRadius: 0,
                 fill: true,
@@ -164,6 +164,7 @@ function initChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 400 }, // 滑らかなアニメーション
             scales: {
                 x: { 
                     type: 'linear', position: 'bottom', min: 150, max: 600,
@@ -178,29 +179,33 @@ function initChart() {
             },
             plugins: { 
                 legend: { display: false },
-                annotation: { // 簡単な縦線描画用のカスタムプラグイン
-                    afterDraw: chart => {
-                        const wl = parseFloat(document.getElementById('slider-wl').value);
-                        const xAxis = chart.scales.x;
-                        const yAxis = chart.scales.y;
-                        const xPixel = xAxis.getPixelForValue(wl);
-                        const ctx = chart.ctx;
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.moveTo(xPixel, yAxis.top);
-                        ctx.lineTo(xPixel, yAxis.bottom);
-                        ctx.lineWidth = 2;
-                        ctx.strokeStyle = '#e03131';
-                        ctx.setLineDash([5, 5]);
-                        ctx.stroke();
-                        ctx.restore();
-                    }
-                }
+                tooltip: { enabled: false }
             }
         },
+        // エラーを修正：カスタムプラグインで直接線を引く
         plugins: [{
             id: 'verticalLine',
-            afterDraw: (chart) => chart.options.plugins.annotation.afterDraw(chart)
+            afterDraw: chart => {
+                const wlInput = document.getElementById('slider-wl');
+                if (!wlInput) return;
+                const wl = parseFloat(wlInput.value);
+                const xAxis = chart.scales.x;
+                const yAxis = chart.scales.y;
+                
+                if (wl >= xAxis.min && wl <= xAxis.max) {
+                    const xPixel = xAxis.getPixelForValue(wl);
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(xPixel, yAxis.top);
+                    ctx.lineTo(xPixel, yAxis.bottom);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#e03131';
+                    ctx.setLineDash([5, 5]);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
         }]
     });
 }
@@ -236,10 +241,7 @@ function updateSimulation() {
     document.getElementById('val-lmax').innerText = mol.lambda;
 
     // パネル1: HOMO-LUMO の更新
-    // エネルギー差 ΔE は 1/λ に比例。エチレン(165nm)を基準にする。
     const gapRatio = 165 / mol.lambda; 
-    // gapRatio = 1.0 (最大) 〜 約 0.36 (カロテン)
-    // CSSの top と bottom を調整して隙間を変化させる (最小10%, 最大35%ずつ寄せる)
     const margin = 10 + (1 - gapRatio) * 30; 
     document.getElementById('orb-lumo').style.top = margin + "%";
     document.getElementById('orb-homo').style.bottom = margin + "%";
@@ -252,16 +254,12 @@ function updateSimulation() {
         dataPoints.push({ x: x, y: calcEpsilon(x, mol.lambda, mol.eps) });
     }
     specChart.data.datasets[0].data = dataPoints;
-    specChart.update();
+    specChart.update(); // 正常に更新されるように修正
 
     // パネル3: セルと吸光度の更新
     const currentEps = calcEpsilon(wl, mol.lambda, mol.eps);
-    // 吸光度 A = ε * c * l (l=1cm, cはMol/L)
-    // concはmMなので M に直す: c = conc * 0.001
     let A = currentEps * (conc * 0.001) * 1;
-    if (A < 0.001) A = 0; // 微小な誤差をカット
-
-    // 透過率 T = 10^-A * 100
+    if (A < 0.001) A = 0; 
     const T = Math.pow(10, -A) * 100;
 
     document.getElementById('val-a').innerText = A.toFixed(3);
@@ -271,14 +269,12 @@ function updateSimulation() {
     const lightColor = getLightColor(wl);
     document.getElementById('beam-in').style.background = `linear-gradient(90deg, transparent, ${lightColor})`;
     
-    // 透過光はTに比例して「細く」「透明に」なるようにスケールダウン
     const beamOut = document.getElementById('beam-out');
     beamOut.style.background = lightColor;
     const scale = Math.max(0, T / 100);
-    beamOut.style.transform = `scaleY(${0.1 + scale * 0.9})`; // 完全に0にはせず線だけ残す
+    beamOut.style.transform = `scaleY(${0.1 + scale * 0.9})`;
     beamOut.style.opacity = 0.2 + scale * 0.8;
 
-    // セルの色 (カロテンならオレンジ、他は透明)
     document.getElementById('cuvette').style.backgroundColor = mol.color;
 }
 
