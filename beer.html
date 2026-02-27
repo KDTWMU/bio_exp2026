@@ -23,9 +23,9 @@
         input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #dee2e6; border-radius: 4px; }
         input[type="range"]::-webkit-slider-thumb { height: 24px; width: 24px; border-radius: 50%; cursor: pointer; -webkit-appearance: none; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         
-        .slider-mol::-webkit-slider-thumb { background: #e03131; } /* 分子スライダー */
-        .slider-wl::-webkit-slider-thumb { background: #1971c2; } /* 波長スライダー */
-        .slider-conc::-webkit-slider-thumb { background: #2f9e44; } /* 濃度スライダー */
+        .slider-mol::-webkit-slider-thumb { background: #e03131; }
+        .slider-wl::-webkit-slider-thumb { background: #1971c2; }
+        .slider-conc::-webkit-slider-thumb { background: #2f9e44; }
 
         /* メインダッシュボード（3パネル） */
         .dashboard { display: grid; gap: 15px; grid-template-columns: 1fr; }
@@ -80,7 +80,7 @@
         <div style="display: flex; gap: 20px;">
             <div class="control-group" style="flex: 1;">
                 <label><span>2. 測定波長 (λ):</span> <span id="lbl-wl" style="color:#1971c2;">280 nm</span></label>
-                <input type="range" id="slider-wl" class="slider-wl" min="150" max="600" step="5" value="280">
+                <input type="range" id="slider-wl" class="slider-wl" min="100" max="650" step="5" value="280">
             </div>
             <div class="control-group" style="flex: 1;">
                 <label><span>3. 試料の濃度 (c):</span> <span id="lbl-conc" style="color:#2f9e44;">0.05 mM</span></label>
@@ -108,7 +108,7 @@
                 <canvas id="specChart"></canvas>
             </div>
             <div style="text-align: center; font-size: 0.8em; color: #666; margin-top: 5px;">
-                λmax = <span id="val-lmax" style="font-weight:bold;">165</span> nm
+                λmax = <span id="val-lmax" style="font-weight:bold; color:#1971c2;">165</span> nm
             </div>
         </div>
 
@@ -133,14 +133,14 @@
 </div>
 
 <script>
-// 分子データ (lambda: 吸収極大波長 nm, eps: モル吸光係数 L/(mol·cm))
+// 分子データに、グラフの表示フォーカス用スケール（xMin, xMax, yMax）を追加
 const MOLECULES = [
-    { name: 'エチレン (n=1)', lambda: 165, eps: 10000, struct: 'CH₂=CH₂', color: 'rgba(255,255,255,0.8)' },
-    { name: 'ブタジエン (n=2)', lambda: 217, eps: 21000, struct: 'CH₂=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
-    { name: 'ヘキサトリエン (n=3)', lambda: 256, eps: 35000, struct: 'CH₂=CH-CH=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
-    { name: 'オクタテトラエン (n=4)', lambda: 290, eps: 50000, struct: 'CH₂=CH-(CH=CH)₂-CH=CH₂', color: 'rgba(255,255,255,0.8)' },
-    { name: 'β-カロテン (n=11)', lambda: 455, eps: 130000, struct: '(長大なポリエン構造)', color: 'rgba(255, 140, 0, 0.4)' },
-    { name: 'トリプトファン (芳香環)', lambda: 280, eps: 5500, struct: 'インドール環 (タンパク質)', color: 'rgba(255,255,255,0.8)' }
+    { name: 'エチレン (n=1)', lambda: 165, eps: 10000, struct: 'CH₂=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 100, xMax: 250, yMax: 12000 },
+    { name: 'ブタジエン (n=2)', lambda: 217, eps: 21000, struct: 'CH₂=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 100, xMax: 350, yMax: 25000 },
+    { name: 'ヘキサトリエン (n=3)', lambda: 256, eps: 35000, struct: 'CH₂=CH-CH=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 150, xMax: 400, yMax: 40000 },
+    { name: 'オクタテトラエン (n=4)', lambda: 290, eps: 50000, struct: 'CH₂=CH-(CH=CH)₂-CH=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 150, xMax: 450, yMax: 60000 },
+    { name: 'β-カロテン (n=11)', lambda: 455, eps: 130000, struct: '(長大なポリエン構造)', color: 'rgba(255, 140, 0, 0.4)', xMin: 300, xMax: 600, yMax: 150000 },
+    { name: 'トリプトファン (芳香環)', lambda: 280, eps: 5500, struct: 'インドール環 (タンパク質)', color: 'rgba(255,255,255,0.8)', xMin: 200, xMax: 400, yMax: 7000 }
 ];
 
 let specChart;
@@ -164,17 +164,17 @@ function initChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: { duration: 400 }, // 滑らかなアニメーション
+            animation: { duration: 400 }, 
             scales: {
                 x: { 
-                    type: 'linear', position: 'bottom', min: 150, max: 600,
+                    type: 'linear', position: 'bottom', min: 100, max: 650,
                     title: { display: true, text: '波長 (nm)' },
                     grid: { color: '#eee' }
                 },
                 y: { 
                     min: 0, max: 150000,
                     title: { display: true, text: 'モル吸光係数 ε' },
-                    ticks: { callback: function(val) { return val / 1000 + 'k'; } }
+                    ticks: { callback: function(val) { return val >= 1000 ? val / 1000 + 'k' : val; } }
                 }
             },
             plugins: { 
@@ -182,7 +182,6 @@ function initChart() {
                 tooltip: { enabled: false }
             }
         },
-        // エラーを修正：カスタムプラグインで直接線を引く
         plugins: [{
             id: 'verticalLine',
             afterDraw: chart => {
@@ -218,20 +217,19 @@ function calcEpsilon(wl, lmax, epsMax) {
 
 // 光源の色を波長から簡易的に決定
 function getLightColor(wl) {
-    if (wl < 380) return '#bdc3c7'; // UVはグレーで表現
-    if (wl < 450) return '#9b59b6'; // 紫/青
-    if (wl < 500) return '#3498db'; // 水色
-    if (wl < 550) return '#2ecc71'; // 緑
-    if (wl < 600) return '#f1c40f'; // 黄/オレンジ
-    return '#e74c3c'; // 赤
+    if (wl < 380) return '#bdc3c7'; 
+    if (wl < 450) return '#9b59b6'; 
+    if (wl < 500) return '#3498db'; 
+    if (wl < 550) return '#2ecc71'; 
+    if (wl < 600) return '#f1c40f'; 
+    return '#e74c3c'; 
 }
 
 function updateSimulation() {
-    // 値の取得
     const molIdx = parseInt(document.getElementById('slider-mol').value);
     const mol = MOLECULES[molIdx];
     const wl = parseFloat(document.getElementById('slider-wl').value);
-    const conc = parseFloat(document.getElementById('slider-conc').value); // mM = 10^-3 M
+    const conc = parseFloat(document.getElementById('slider-conc').value);
 
     // UIテキスト更新
     document.getElementById('lbl-mol').innerText = mol.name;
@@ -248,13 +246,18 @@ function updateSimulation() {
     document.getElementById('orb-arrow').style.top = margin + "%";
     document.getElementById('orb-arrow').style.bottom = margin + "%";
 
-    // パネル2: グラフ更新
+    // パネル2: グラフ更新（フォーカスとデータ生成）
+    specChart.options.scales.x.min = mol.xMin;
+    specChart.options.scales.x.max = mol.xMax;
+    specChart.options.scales.y.max = mol.yMax;
+
     const dataPoints = [];
-    for (let x = 150; x <= 600; x += 2) {
+    // グラフの描画範囲より少し広めにデータを生成しておく
+    for (let x = 50; x <= 700; x += 2) {
         dataPoints.push({ x: x, y: calcEpsilon(x, mol.lambda, mol.eps) });
     }
     specChart.data.datasets[0].data = dataPoints;
-    specChart.update(); // 正常に更新されるように修正
+    specChart.update();
 
     // パネル3: セルと吸光度の更新
     const currentEps = calcEpsilon(wl, mol.lambda, mol.eps);
