@@ -84,8 +84,8 @@
 
     <div class="controls">
         <div class="control-group">
-            <label><span>1. 測定対象の分子を選択:</span> <span id="lbl-mol" style="color:#e03131;">エチレン (n=1)</span></label>
-            <input type="range" id="slider-mol" class="slider-mol" min="0" max="8" step="1" value="0">
+            <label><span>1. 測定対象の分子を選択:</span></label>
+            <select id="select-mol" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 16px; margin-top: 5px; border: 1px solid #ccc;"></select>
         </div>
         <div style="display: flex; gap: 20px;">
             <div class="control-group" style="flex: 1;">
@@ -190,9 +190,9 @@ function initChart() {
                     grid: { color: '#eee' }
                 },
                 y: { 
-                    min: 0, max: 150000,
-                    title: { display: true, text: 'モル吸光係数 ε' },
-                    ticks: { callback: function(val) { return val >= 1000 ? val / 1000 + 'k' : val; } }
+                    min: 0,
+                    title: { display: true, text: '吸光度 A' },
+                    ticks: { callback: function(val) { return val.toFixed(2); } }
                 }
             },
             plugins: { 
@@ -242,15 +242,13 @@ function getLightColor(wl) {
 }
 
 function updateSimulation() {
-    const molIdx = parseInt(document.getElementById('slider-mol').value);
+    const molIdx = parseInt(document.getElementById('select-mol').value);
     const mol = MOLECULES[molIdx];
     const wl = parseFloat(document.getElementById('slider-wl').value);
     const conc = parseFloat(document.getElementById('slider-conc').value);
 
     document.getElementById('lbl-mol').innerText = mol.name;
-    document.getElementById('lbl-wl').innerText = wl + " nm";
-    document.getElementById('lbl-conc').innerText = conc.toFixed(2) + " mM";
-    document.getElementById('struct-text').innerText = mol.struct;
+
     
     // グルコース等、UV領域に実質ピークを持たないものの表現
     if (mol.name === 'グルコース') {
@@ -270,11 +268,14 @@ function updateSimulation() {
     // パネル2: グラフ更新（フォーカスとデータ生成）
     specChart.options.scales.x.min = mol.xMin;
     specChart.options.scales.x.max = mol.xMax;
-    specChart.options.scales.y.max = mol.yMax;
+    const maxConc_M = 0.2 * 0.001; 
+    specChart.options.scales.y.max = mol.yMax * maxConc_M;
 
     const dataPoints = [];
     for (let x = 50; x <= 700; x += 2) {
-        dataPoints.push({ x: x, y: calcEpsilon(x, mol.lambda, mol.eps) });
+        let eps = calcEpsilon(x, mol.lambda, mol.eps);
+        let abs = eps * (conc * 0.001) * 1; // 吸光度 A = ε c l (l=1cm)
+        dataPoints.push({ x: x, y: abs });
     }
     specChart.data.datasets[0].data = dataPoints;
     specChart.update();
@@ -316,11 +317,21 @@ function updateSimulation() {
     document.getElementById('cuvette').style.backgroundColor = mol.color;
 }
 
-document.getElementById('slider-mol').addEventListener('input', updateSimulation);
+// スライダーではなく change イベントに変更
+document.getElementById('select-mol').addEventListener('change', updateSimulation);
 document.getElementById('slider-wl').addEventListener('input', updateSimulation);
 document.getElementById('slider-conc').addEventListener('input', updateSimulation);
 
 window.onload = () => {
+    // プルダウンメニューの選択肢を動的に生成
+    const selectMol = document.getElementById('select-mol');
+    MOLECULES.forEach((mol, index) => {
+        let option = document.createElement('option');
+        option.value = index;
+        option.text = mol.name;
+        selectMol.appendChild(option);
+    });
+
     initChart();
     updateSimulation();
 };
