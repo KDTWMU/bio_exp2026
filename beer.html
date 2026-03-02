@@ -271,6 +271,7 @@ function updateSimulation() {
     specChart.options.scales.x.min = mol.xMin;
     specChart.options.scales.x.max = mol.xMax;
     // グラフの枠の高さ（最大値）は、濃度を最大（0.2mM）にした時の吸光度に固定
+    const sliderMaxConc = parseFloat(document.getElementById('slider-conc').max);
     const maxConc_M = 0.2 * 0.001;
     specChart.options.scales.y.max = mol.yMax * maxConc_M;
 
