@@ -23,9 +23,11 @@
         input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #dee2e6; border-radius: 4px; }
         input[type="range"]::-webkit-slider-thumb { height: 24px; width: 24px; border-radius: 50%; cursor: pointer; -webkit-appearance: none; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         
-        .slider-mol::-webkit-slider-thumb { background: #e03131; }
         .slider-wl::-webkit-slider-thumb { background: #1971c2; }
         .slider-conc::-webkit-slider-thumb { background: #2f9e44; }
+
+        /* プルダウンのスタイル */
+        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; margin-top: 5px; background-color: white; cursor: pointer; }
 
         /* メインダッシュボード（3パネル） */
         .dashboard { display: grid; gap: 15px; grid-template-columns: 1fr; }
@@ -85,16 +87,16 @@
     <div class="controls">
         <div class="control-group">
             <label><span>1. 測定対象の分子を選択:</span></label>
-            <select id="select-mol" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 16px; margin-top: 5px; border: 1px solid #ccc;"></select>
+            <select id="select-mol"></select>
         </div>
-        <div style="display: flex; gap: 20px;">
+        <div style="display: flex; gap: 20px; margin-top: 15px;">
             <div class="control-group" style="flex: 1;">
                 <label><span>2. 測定波長 (λ):</span> <span id="lbl-wl" style="color:#1971c2;">280 nm</span></label>
                 <input type="range" id="slider-wl" class="slider-wl" min="100" max="650" step="5" value="260">
             </div>
             <div class="control-group" style="flex: 1;">
                 <label><span>3. 試料の濃度 (c):</span> <span id="lbl-conc" style="color:#2f9e44;">0.05 mM</span></label>
-                <input type="range" id="slider-conc" class="slider-conc" min="0.01" max="0.6" step="0.01" value="0.05">
+                <input type="range" id="slider-conc" class="slider-conc" min="0.01" max="0.2" step="0.01" value="0.05">
             </div>
         </div>
     </div>
@@ -113,7 +115,7 @@
         </div>
 
         <div class="panel">
-            <div class="panel-title">マクロ: 吸収スペクトル</div>
+            <div class="panel-title">マクロ: 吸光度スペクトル</div>
             <div class="chart-container">
                 <canvas id="specChart"></canvas>
             </div>
@@ -147,7 +149,6 @@
 </div>
 
 <script>
-// 分子データ（核酸、グルコース、誘導体化グルコースを追加）
 const MOLECULES = [
     { name: 'エチレン (n=1)', lambda: 165, eps: 10000, struct: 'CH₂=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 100, xMax: 250, yMax: 12000 },
     { name: 'ブタジエン (n=2)', lambda: 217, eps: 21000, struct: 'CH₂=CH-CH=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 100, xMax: 350, yMax: 25000 },
@@ -155,7 +156,6 @@ const MOLECULES = [
     { name: 'オクタテトラエン (n=4)', lambda: 290, eps: 50000, struct: 'CH₂=CH-(CH=CH)₂-CH=CH₂', color: 'rgba(255,255,255,0.8)', xMin: 150, xMax: 450, yMax: 60000 },
     { name: 'β-カロテン (n=11)', lambda: 455, eps: 130000, struct: '(長大なポリエン構造)', color: 'rgba(255, 140, 0, 0.4)', xMin: 300, xMax: 600, yMax: 150000 },
     { name: 'トリプトファン (芳香環)', lambda: 280, eps: 5500, struct: 'インドール環 (タンパク質)', color: 'rgba(255,255,255,0.8)', xMin: 200, xMax: 400, yMax: 7000 },
-    // 追加分
     { name: '核酸 (アデニンなど)', lambda: 260, eps: 15000, struct: 'プリン環 (芳香族)', color: 'rgba(255,255,255,0.8)', xMin: 200, xMax: 350, yMax: 20000 },
     { name: 'グルコース', lambda: 150, eps: 100, struct: '環状構造 (共役系なし)', color: 'rgba(255,255,255,0.8)', xMin: 150, xMax: 350, yMax: 1000 },
     { name: '誘導体化グルコース (2-アミノピリジン標識)', lambda: 310, eps: 5000, struct: 'ピリジン環 (共役系付加)', color: 'rgba(255,255,255,0.8)', xMin: 200, xMax: 450, yMax: 8000 }
@@ -169,7 +169,7 @@ function initChart() {
         type: 'line',
         data: {
             datasets: [{
-                label: '吸収スペクトル',
+                label: '吸光度',
                 data: [],
                 borderColor: '#1971c2',
                 backgroundColor: 'rgba(25, 113, 194, 0.2)',
@@ -182,7 +182,7 @@ function initChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: { duration: 400 }, 
+            animation: { duration: 0 }, // スライダーにサクサク追従させるためにアニメーションを0に
             scales: {
                 x: { 
                     type: 'linear', position: 'bottom', min: 100, max: 650,
@@ -192,6 +192,7 @@ function initChart() {
                 y: { 
                     min: 0,
                     title: { display: true, text: '吸光度 A' },
+                    // 吸光度は小数点第2位まで表示
                     ticks: { callback: function(val) { return val.toFixed(2); } }
                 }
             },
@@ -242,15 +243,16 @@ function getLightColor(wl) {
 }
 
 function updateSimulation() {
+    // スライダーではなくプルダウンから値を取得
     const molIdx = parseInt(document.getElementById('select-mol').value);
     const mol = MOLECULES[molIdx];
     const wl = parseFloat(document.getElementById('slider-wl').value);
     const conc = parseFloat(document.getElementById('slider-conc').value);
 
-    document.getElementById('lbl-mol').innerText = mol.name;
-
+    document.getElementById('lbl-wl').innerText = wl + " nm";
+    document.getElementById('lbl-conc').innerText = conc.toFixed(2) + " mM";
+    document.getElementById('struct-text').innerText = mol.struct;
     
-    // グルコース等、UV領域に実質ピークを持たないものの表現
     if (mol.name === 'グルコース') {
         document.getElementById('val-lmax').innerText = "200以下 (測定不可)";
     } else {
@@ -259,22 +261,23 @@ function updateSimulation() {
 
     // パネル1: HOMO-LUMO の更新
     const gapRatio = 165 / mol.lambda; 
-    const margin = 10 + (1 - gapRatio) * 35; // 差を強調
+    const margin = 10 + (1 - gapRatio) * 35; 
     document.getElementById('orb-lumo').style.top = margin + "%";
     document.getElementById('orb-homo').style.bottom = margin + "%";
     document.getElementById('orb-arrow').style.top = margin + "%";
     document.getElementById('orb-arrow').style.bottom = margin + "%";
 
-    // パネル2: グラフ更新（フォーカスとデータ生成）
+    // パネル2: グラフ更新（Y軸を吸光度として描画）
     specChart.options.scales.x.min = mol.xMin;
     specChart.options.scales.x.max = mol.xMax;
-    const maxConc_M = 0.2 * 0.001; 
+    // グラフの枠の高さ（最大値）は、濃度を最大（0.2mM）にした時の吸光度に固定
+    const maxConc_M = 0.2 * 0.001;
     specChart.options.scales.y.max = mol.yMax * maxConc_M;
 
     const dataPoints = [];
     for (let x = 50; x <= 700; x += 2) {
         let eps = calcEpsilon(x, mol.lambda, mol.eps);
-        let abs = eps * (conc * 0.001) * 1; // 吸光度 A = ε c l (l=1cm)
+        let abs = eps * (conc * 0.001) * 1; // 吸光度 A = ε c l
         dataPoints.push({ x: x, y: abs });
     }
     specChart.data.datasets[0].data = dataPoints;
@@ -286,7 +289,7 @@ function updateSimulation() {
     if (A < 0.001) A = 0; 
     const T = Math.pow(10, -A) * 100;
 
-    // アラートの表示制御 (透過率 <= 0.1%)
+    // アラートの表示制御
     const alertBox = document.getElementById('alert-msg');
     const valA = document.getElementById('val-a');
     if (T <= 0.1) {
@@ -317,11 +320,7 @@ function updateSimulation() {
     document.getElementById('cuvette').style.backgroundColor = mol.color;
 }
 
-// スライダーではなく change イベントに変更
-document.getElementById('select-mol').addEventListener('change', updateSimulation);
-document.getElementById('slider-wl').addEventListener('input', updateSimulation);
-document.getElementById('slider-conc').addEventListener('input', updateSimulation);
-
+// 初期化処理
 window.onload = () => {
     // プルダウンメニューの選択肢を動的に生成
     const selectMol = document.getElementById('select-mol');
@@ -332,10 +331,16 @@ window.onload = () => {
         selectMol.appendChild(option);
     });
 
+    // イベントリスナーの登録 (分子選択は change イベント)
+    selectMol.addEventListener('change', updateSimulation);
+    document.getElementById('slider-wl').addEventListener('input', updateSimulation);
+    document.getElementById('slider-conc').addEventListener('input', updateSimulation);
+
     initChart();
     updateSimulation();
 };
 </script>
+
 <div style="text-align: center; margin-top: 20px;">
   <button type="button" onclick="history.back()" style="padding: 10px 20px;">
     前のページに戻る
