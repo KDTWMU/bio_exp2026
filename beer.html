@@ -270,9 +270,23 @@ function updateSimulation() {
     // パネル2: グラフ更新（Y軸を吸光度として描画）
     specChart.options.scales.x.min = mol.xMin;
     specChart.options.scales.x.max = mol.xMax;
-    // グラフの枠の高さ（最大値）は、濃度を最大（0.2mM）にした時の吸光度に固定
-    const currentMaxAbs = mol.eps * (conc * 0.001);
-    specChart.options.scales.y.max = Math.max(0.05, currentMaxAbs * 1.2);
+    // 現在の濃度における最大吸光度
+    const currentMaxAbs = mol.eps * (conc * 0.001); 
+    
+    // スライダーを最大(0.6mMなど)にした時の、理論上の最大吸光度
+    const sliderMaxConc = parseFloat(document.getElementById('slider-conc').max);
+    const absoluteMaxAbs = mol.eps * (sliderMaxConc * 0.001);
+
+    // Y軸の基本固定値を決定（最大濃度のピークの1.1倍。ただし2.2を上限とする）
+    const fixedYMax = Math.min(2.2, absoluteMaxAbs * 1.1);
+
+    if (currentMaxAbs <= 2.0) {
+        // 吸光度が2.0以下の間は、Y軸を固定して「山の成長」を見せる
+        specChart.options.scales.y.max = fixedYMax;
+    } else {
+        // 吸光度が2.0を超えたら、山の見た目の高さは固定し、Y軸の数値だけを増やす（オートスケール）
+        specChart.options.scales.y.max = currentMaxAbs * 1.1;
+    }
     const dataPoints = [];
     for (let x = 50; x <= 700; x += 2) {
         let eps = calcEpsilon(x, mol.lambda, mol.eps);
