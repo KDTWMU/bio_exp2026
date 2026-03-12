@@ -158,7 +158,7 @@ function update() {
         for(let i=0; i<VIZ_SIZE; i++) {
             const mol = document.getElementById(`mol-${i}`);
             // 各分子にわずかな「反応のズレ」を持たせて段階的変化を表現
-            const offset = (i - (VIZ_SIZE-1)/2) * 0.4; 
+            const offset = (i - (VIZ_SIZE-1)/2) * 0.6; 
             const local_pH = ph + offset;
 
             // 1. α-カルボキシ基の評価 (酸性)
