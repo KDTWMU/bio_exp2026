@@ -117,7 +117,7 @@ function init() {
     for(let i=0; i<45; i++) { 
         let h = document.createElement('div');
         h.className = 'h-ion';
-        h.innerText = '+';
+        h.innerText = 'H+';
         h.style.left = Math.random() * 90 + 5 + '%';
         h.style.top = Math.random() * 90 + 5 + '%';
         h.style.fontSize = (Math.random() * 8 + 14) + 'px';
@@ -163,7 +163,7 @@ function update() {
 
             // 1. α-カルボキシ基の評価 (酸性)
             let coo_text = (local_pH < data.pKa1) ? "COOH" : "COO-";
-            let coo_val  = (local_pH < data.pKa1 ? 0 : -1;
+            let coo_val  = (local_pH < data.pKa1) ? 0 : -1;
 
             // 2. α-アミノ基の評価 (塩基性)
             let nh3_text = (local_pH < data.pKa2) ? "NH3+" : "NH2";
