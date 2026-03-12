@@ -162,12 +162,12 @@ function update() {
             const local_pH = ph + offset;
 
             // 1. α-カルボキシ基の評価 (酸性)
-            let coo_text = (local_pH < data.pKa1) ? "COOH" : "COO-";
-            let coo_val  = (local_pH < data.pKa1) ? 0 : -1;
+            let coo_text = (local_pH < data.pi) ? "COOH" : "COO-";
+            let coo_val  = (local_pH < data.pi) ? 0 : -1;
 
             // 2. α-アミノ基の評価 (塩基性)
-            let nh3_text = (local_pH < data.pKa2) ? "NH3+" : "NH2";
-            let nh3_val  = (local_pH < data.pKa2) ? +1 : 0;
+            let nh3_text = (local_pH < data.pi) ? "NH3+" : "NH2";
+            let nh3_val  = (local_pH < data.pi) ? +1 : 0;
 
             // 3. 側鎖(R基)の評価
             let r_text = "R";
