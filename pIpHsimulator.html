@@ -109,7 +109,7 @@ function init() {
     for (let name in MOLECULE_DATA) {
         let opt = document.createElement('option');
         opt.value = name;
-        opt.innerText = MOLECULE_DATA[name].type === 'amino' ? `${name} (pI: ${MOLECULE_DATA[name].pi})` : name;
+        opt.innerText = MOLECULE_DATA[name].type === 'amino' ? `${name} ` : name;
         select.appendChild(opt);
     }
 
@@ -231,9 +231,9 @@ function update() {
         }
 
         if (data.charge === 'pos') {
-            status.innerText = "常に正電荷 (+)"; status.style.color = "#e03131";
+            status.innerText = "正電荷 (+)"; status.style.color = "#e03131";
         } else {
-            status.innerText = "常に負電荷 (-)"; status.style.color = "#1971c2";
+            status.innerText = "負電荷 (-)"; status.style.color = "#1971c2";
         }
     }
 }
